@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use ruvector_core::{VectorDB, DbOptions, VectorEntry};
-use ruvector_core::types::{DistanceMetric, HnswConfig, SearchQuery};
+use ruvector_core::{VectorDB, VectorEntry};
+use ruvector_core::types::{DbOptions, DistanceMetric, HnswConfig, SearchQuery};
 
 fn bench_hnsw_search(c: &mut Criterion) {
     let mut group = c.benchmark_group("hnsw_search");
