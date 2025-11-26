@@ -216,26 +216,28 @@ impl HypergraphIndex {
     }
 
     /// Get k-hop neighbors in hypergraph
+    /// Returns all nodes reachable within k hops from the start node
     pub fn k_hop_neighbors(&self, start_node: VectorId, k: usize) -> HashSet<VectorId> {
         let mut visited = HashSet::new();
         let mut current_layer = HashSet::new();
-        current_layer.insert(start_node);
+        current_layer.insert(start_node.clone());
+        visited.insert(start_node);  // Start node is at distance 0
 
-        for _ in 0..k {
+        for _hop in 0..k {
             let mut next_layer = HashSet::new();
 
             for node in current_layer.iter() {
-                if visited.contains(node) {
-                    continue;
-                }
-                visited.insert(node.clone());
-
                 // Get all hyperedges containing this node
                 if let Some(hyperedges) = self.entity_to_hyperedges.get(node) {
                     for edge_id in hyperedges {
                         // Get all nodes in this hyperedge
                         if let Some(nodes) = self.hyperedge_to_entities.get(edge_id) {
-                            next_layer.extend(nodes.iter().cloned());
+                            for neighbor in nodes.iter() {
+                                if !visited.contains(neighbor) {
+                                    visited.insert(neighbor.clone());
+                                    next_layer.insert(neighbor.clone());
+                                }
+                            }
                         }
                     }
                 }

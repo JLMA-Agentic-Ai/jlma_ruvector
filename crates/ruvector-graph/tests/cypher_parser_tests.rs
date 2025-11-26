@@ -33,10 +33,9 @@ fn test_parse_match_relationship() {
 }
 
 #[test]
-#[ignore = "Undirected relationship syntax not yet implemented"]
 fn test_parse_match_undirected_relationship() {
     let result = parse_cypher("MATCH (a)-[r:FRIEND]-(b) RETURN a, b");
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "Parse failed: {:?}", result.err());
 }
 
 #[test]
@@ -78,10 +77,9 @@ fn test_parse_set_property() {
 }
 
 #[test]
-#[ignore = "REMOVE statement not yet implemented"]
 fn test_parse_remove_property() {
     let result = parse_cypher("MATCH (n:Person {name: 'Alice'}) REMOVE n.age");
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "Parse failed: {:?}", result.err());
 }
 
 #[test]

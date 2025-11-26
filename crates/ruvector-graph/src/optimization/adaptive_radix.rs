@@ -22,75 +22,190 @@ impl<V: Clone> AdaptiveRadixTree<V> {
 
     /// Insert a key-value pair
     pub fn insert(&mut self, key: &[u8], value: V) {
-        if let Some(root) = &mut self.root {
-            Self::insert_recursive(root, key, 0, value);
-        } else {
-            let mut leaf = Box::new(ArtNode::Leaf {
+        if self.root.is_none() {
+            self.root = Some(Box::new(ArtNode::Leaf {
                 key: key.to_vec(),
                 value,
-            });
-            self.root = Some(leaf);
+            }));
+            self.size += 1;
+            return;
         }
+
+        let root = self.root.take().unwrap();
+        self.root = Some(Self::insert_recursive(root, key, 0, value));
         self.size += 1;
     }
 
-    fn insert_recursive(node: &mut Box<ArtNode<V>>, key: &[u8], depth: usize, value: V) {
+    fn insert_recursive(mut node: Box<ArtNode<V>>, key: &[u8], depth: usize, value: V) -> Box<ArtNode<V>> {
         match node.as_mut() {
             ArtNode::Leaf { key: leaf_key, value: leaf_value } => {
-                // Split leaf into internal node
-                let common_prefix = Self::common_prefix_len(leaf_key, key, depth);
-
-                if common_prefix == leaf_key.len() - depth {
+                // Check if keys are identical
+                if *leaf_key == key {
                     // Replace value
                     *leaf_value = value;
-                } else {
-                    // Create new internal node
-                    let _new_node: ArtNode<V> = ArtNode::Node4 {
-                        prefix: leaf_key[depth..depth + common_prefix].to_vec(),
-                        children: [None, None, None, None],
-                        keys: [0; 4],
-                        num_children: 0,
-                    };
-
-                    // TODO: Properly split and insert both leaves
+                    return node;
                 }
-            }
-            ArtNode::Node4 { prefix, children, keys, num_children } => {
-                // Handle Node4 insertion
-                let prefix_match = Self::check_prefix(prefix, key, depth);
 
-                if prefix_match == prefix.len() {
-                    let next_depth = depth + prefix.len();
-                    if next_depth < key.len() {
-                        let key_byte = key[next_depth];
+                // Find common prefix length starting from depth
+                let common_prefix_len = Self::common_prefix_len(leaf_key, key, depth);
+                let prefix = if depth + common_prefix_len <= leaf_key.len() && depth + common_prefix_len <= key.len() {
+                    key[depth..depth + common_prefix_len].to_vec()
+                } else {
+                    vec![]
+                };
 
-                        // Find or create child
-                        let mut found = false;
-                        for i in 0..(*num_children as usize) {
-                            if keys[i] == key_byte {
-                                Self::insert_recursive(&mut children[i].as_mut().unwrap(), key, next_depth + 1, value.clone());
-                                found = true;
-                                break;
-                            }
-                        }
+                // Create a new Node4 to hold both leaves
+                let mut children: [Option<Box<ArtNode<V>>>; 4] = [None, None, None, None];
+                let mut keys_arr = [0u8; 4];
+                let mut num_children = 0u8;
 
-                        if !found && (*num_children as usize) < 4 {
-                            // Add new child
-                            let idx = *num_children as usize;
-                            keys[idx] = key_byte;
-                            // Note: value can only be used once, so this branch consumes it
-                            children[idx] = Some(Box::new(ArtNode::Leaf {
-                                key: key.to_vec(),
-                                value,
-                            }));
-                            *num_children += 1;
-                            return;  // Value was consumed
+                let next_depth = depth + common_prefix_len;
+
+                // Get the distinguishing bytes for old and new keys
+                let old_byte = if next_depth < leaf_key.len() {
+                    Some(leaf_key[next_depth])
+                } else {
+                    None
+                };
+
+                let new_byte = if next_depth < key.len() {
+                    Some(key[next_depth])
+                } else {
+                    None
+                };
+
+                // Take ownership of old leaf's data
+                let old_key = std::mem::take(leaf_key);
+                let old_value = unsafe { std::ptr::read(leaf_value) };
+
+                // Add old leaf
+                if let Some(byte) = old_byte {
+                    keys_arr[num_children as usize] = byte;
+                    children[num_children as usize] = Some(Box::new(ArtNode::Leaf {
+                        key: old_key,
+                        value: old_value,
+                    }));
+                    num_children += 1;
+                }
+
+                // Add new leaf
+                if let Some(byte) = new_byte {
+                    // Find insertion position (keep sorted for efficiency)
+                    let mut insert_idx = num_children as usize;
+                    for i in 0..num_children as usize {
+                        if byte < keys_arr[i] {
+                            insert_idx = i;
+                            break;
                         }
                     }
+
+                    // Shift existing entries if needed
+                    for i in (insert_idx..num_children as usize).rev() {
+                        keys_arr[i + 1] = keys_arr[i];
+                        children[i + 1] = children[i].take();
+                    }
+
+                    keys_arr[insert_idx] = byte;
+                    children[insert_idx] = Some(Box::new(ArtNode::Leaf {
+                        key: key.to_vec(),
+                        value,
+                    }));
+                    num_children += 1;
                 }
+
+                Box::new(ArtNode::Node4 {
+                    prefix,
+                    children,
+                    keys: keys_arr,
+                    num_children,
+                })
+            }
+            ArtNode::Node4 { prefix, children, keys, num_children } => {
+                // Check prefix match
+                let prefix_match = Self::check_prefix(prefix, key, depth);
+
+                if prefix_match < prefix.len() {
+                    // Prefix mismatch - need to split the node
+                    let common = prefix[..prefix_match].to_vec();
+                    let remaining = prefix[prefix_match..].to_vec();
+                    let old_byte = remaining[0];
+
+                    // Create new inner node with remaining prefix
+                    let old_children = std::mem::replace(children, [None, None, None, None]);
+                    let old_keys = *keys;
+                    let old_num = *num_children;
+
+                    let inner_node = Box::new(ArtNode::Node4 {
+                        prefix: remaining[1..].to_vec(),
+                        children: old_children,
+                        keys: old_keys,
+                        num_children: old_num,
+                    });
+
+                    // Create new leaf for the inserted key
+                    let next_depth = depth + prefix_match;
+                    let new_byte = if next_depth < key.len() { key[next_depth] } else { 0 };
+                    let new_leaf = Box::new(ArtNode::Leaf {
+                        key: key.to_vec(),
+                        value,
+                    });
+
+                    // Set up new node
+                    let mut new_children: [Option<Box<ArtNode<V>>>; 4] = [None, None, None, None];
+                    let mut new_keys = [0u8; 4];
+
+                    if old_byte < new_byte {
+                        new_keys[0] = old_byte;
+                        new_children[0] = Some(inner_node);
+                        new_keys[1] = new_byte;
+                        new_children[1] = Some(new_leaf);
+                    } else {
+                        new_keys[0] = new_byte;
+                        new_children[0] = Some(new_leaf);
+                        new_keys[1] = old_byte;
+                        new_children[1] = Some(inner_node);
+                    }
+
+                    return Box::new(ArtNode::Node4 {
+                        prefix: common,
+                        children: new_children,
+                        keys: new_keys,
+                        num_children: 2,
+                    });
+                }
+
+                // Full prefix match - traverse to child
+                let next_depth = depth + prefix.len();
+                if next_depth < key.len() {
+                    let key_byte = key[next_depth];
+
+                    // Find existing child
+                    for i in 0..(*num_children as usize) {
+                        if keys[i] == key_byte {
+                            let child = children[i].take().unwrap();
+                            children[i] = Some(Self::insert_recursive(child, key, next_depth + 1, value));
+                            return node;
+                        }
+                    }
+
+                    // No matching child - add new one
+                    if (*num_children as usize) < 4 {
+                        let idx = *num_children as usize;
+                        keys[idx] = key_byte;
+                        children[idx] = Some(Box::new(ArtNode::Leaf {
+                            key: key.to_vec(),
+                            value,
+                        }));
+                        *num_children += 1;
+                    }
+                    // TODO: Handle node growth to Node16 when full
+                }
+
+                node
             }
             _ => {
-                // Handle other node types
+                // Handle other node types (Node16, Node48, Node256)
+                node
             }
         }
     }
@@ -302,7 +417,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[ignore = "ART multi-key insertion incomplete - TODO: implement proper leaf splitting"]
     fn test_art_basic() {
         let mut tree = AdaptiveRadixTree::new();
 
@@ -341,7 +455,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "ART common prefix handling incomplete - TODO: implement proper node splitting"]
     fn test_art_common_prefix() {
         let mut tree = AdaptiveRadixTree::new();
 

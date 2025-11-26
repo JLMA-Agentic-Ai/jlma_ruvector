@@ -172,9 +172,26 @@ impl SemanticAnalyzer {
             Statement::Merge(clause) => self.analyze_merge(clause),
             Statement::Delete(clause) => self.analyze_delete(clause),
             Statement::Set(clause) => self.analyze_set(clause),
+            Statement::Remove(clause) => self.analyze_remove(clause),
             Statement::Return(clause) => self.analyze_return(clause),
             Statement::With(clause) => self.analyze_with(clause),
         }
+    }
+
+    fn analyze_remove(&mut self, clause: &RemoveClause) -> SemanticResult<()> {
+        for item in &clause.items {
+            match item {
+                RemoveItem::Property { variable, .. } => {
+                    // Verify variable is defined
+                    self.lookup_variable(variable)?;
+                }
+                RemoveItem::Labels { variable, .. } => {
+                    // Verify variable is defined
+                    self.lookup_variable(variable)?;
+                }
+            }
+        }
+        Ok(())
     }
 
     fn analyze_match(&mut self, clause: &MatchClause) -> SemanticResult<()> {

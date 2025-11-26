@@ -25,6 +25,7 @@ pub enum Statement {
     Merge(MergeClause),
     Delete(DeleteClause),
     Set(SetClause),
+    Remove(RemoveClause),
     Return(ReturnClause),
     With(WithClause),
 }
@@ -151,6 +152,26 @@ pub enum SetItem {
         variable: String,
         value: Expression,
     },
+    Labels {
+        variable: String,
+        labels: Vec<String>,
+    },
+}
+
+/// REMOVE clause for removing properties or labels
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RemoveClause {
+    pub items: Vec<RemoveItem>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum RemoveItem {
+    /// Remove a property: REMOVE n.property
+    Property {
+        variable: String,
+        property: String,
+    },
+    /// Remove labels: REMOVE n:Label1:Label2
     Labels {
         variable: String,
         labels: Vec<String>,

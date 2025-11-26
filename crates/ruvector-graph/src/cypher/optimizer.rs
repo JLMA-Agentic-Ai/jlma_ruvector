@@ -165,6 +165,7 @@ impl QueryOptimizer {
         right: &Expression,
     ) -> Option<Expression> {
         match (left, op, right) {
+            // Arithmetic operations
             (Expression::Integer(a), BinaryOperator::Add, Expression::Integer(b)) => {
                 Some(Expression::Integer(a + b))
             }
@@ -177,14 +178,78 @@ impl QueryOptimizer {
             (Expression::Integer(a), BinaryOperator::Divide, Expression::Integer(b)) if *b != 0 => {
                 Some(Expression::Integer(a / b))
             }
+            (Expression::Integer(a), BinaryOperator::Modulo, Expression::Integer(b)) if *b != 0 => {
+                Some(Expression::Integer(a % b))
+            }
             (Expression::Float(a), BinaryOperator::Add, Expression::Float(b)) => {
                 Some(Expression::Float(a + b))
             }
+            (Expression::Float(a), BinaryOperator::Subtract, Expression::Float(b)) => {
+                Some(Expression::Float(a - b))
+            }
+            (Expression::Float(a), BinaryOperator::Multiply, Expression::Float(b)) => {
+                Some(Expression::Float(a * b))
+            }
+            (Expression::Float(a), BinaryOperator::Divide, Expression::Float(b)) if *b != 0.0 => {
+                Some(Expression::Float(a / b))
+            }
+            // Comparison operations for integers
+            (Expression::Integer(a), BinaryOperator::Equal, Expression::Integer(b)) => {
+                Some(Expression::Boolean(a == b))
+            }
+            (Expression::Integer(a), BinaryOperator::NotEqual, Expression::Integer(b)) => {
+                Some(Expression::Boolean(a != b))
+            }
+            (Expression::Integer(a), BinaryOperator::LessThan, Expression::Integer(b)) => {
+                Some(Expression::Boolean(a < b))
+            }
+            (Expression::Integer(a), BinaryOperator::LessThanOrEqual, Expression::Integer(b)) => {
+                Some(Expression::Boolean(a <= b))
+            }
+            (Expression::Integer(a), BinaryOperator::GreaterThan, Expression::Integer(b)) => {
+                Some(Expression::Boolean(a > b))
+            }
+            (Expression::Integer(a), BinaryOperator::GreaterThanOrEqual, Expression::Integer(b)) => {
+                Some(Expression::Boolean(a >= b))
+            }
+            // Comparison operations for floats
+            (Expression::Float(a), BinaryOperator::Equal, Expression::Float(b)) => {
+                Some(Expression::Boolean((a - b).abs() < f64::EPSILON))
+            }
+            (Expression::Float(a), BinaryOperator::NotEqual, Expression::Float(b)) => {
+                Some(Expression::Boolean((a - b).abs() >= f64::EPSILON))
+            }
+            (Expression::Float(a), BinaryOperator::LessThan, Expression::Float(b)) => {
+                Some(Expression::Boolean(a < b))
+            }
+            (Expression::Float(a), BinaryOperator::LessThanOrEqual, Expression::Float(b)) => {
+                Some(Expression::Boolean(a <= b))
+            }
+            (Expression::Float(a), BinaryOperator::GreaterThan, Expression::Float(b)) => {
+                Some(Expression::Boolean(a > b))
+            }
+            (Expression::Float(a), BinaryOperator::GreaterThanOrEqual, Expression::Float(b)) => {
+                Some(Expression::Boolean(a >= b))
+            }
+            // String comparison
+            (Expression::String(a), BinaryOperator::Equal, Expression::String(b)) => {
+                Some(Expression::Boolean(a == b))
+            }
+            (Expression::String(a), BinaryOperator::NotEqual, Expression::String(b)) => {
+                Some(Expression::Boolean(a != b))
+            }
+            // Boolean operations
             (Expression::Boolean(a), BinaryOperator::And, Expression::Boolean(b)) => {
                 Some(Expression::Boolean(*a && *b))
             }
             (Expression::Boolean(a), BinaryOperator::Or, Expression::Boolean(b)) => {
                 Some(Expression::Boolean(*a || *b))
+            }
+            (Expression::Boolean(a), BinaryOperator::Equal, Expression::Boolean(b)) => {
+                Some(Expression::Boolean(a == b))
+            }
+            (Expression::Boolean(a), BinaryOperator::NotEqual, Expression::Boolean(b)) => {
+                Some(Expression::Boolean(a != b))
             }
             _ => None,
         }
@@ -331,6 +396,7 @@ impl QueryOptimizer {
             }
             Statement::Delete(_) => 30.0,
             Statement::Set(_) => 20.0,
+            Statement::Remove(clause) => clause.items.len() as f64 * 15.0,
             Statement::Return(clause) => {
                 let mut cost = 10.0;
 
@@ -455,7 +521,6 @@ mod tests {
     use crate::cypher::parser::parse_cypher;
 
     #[test]
-    #[ignore = "Constant folding optimization not yet implemented"]
     fn test_constant_folding() {
         let query = parse_cypher("MATCH (n) WHERE 2 + 3 = 5 RETURN n").unwrap();
         let optimizer = QueryOptimizer::new();

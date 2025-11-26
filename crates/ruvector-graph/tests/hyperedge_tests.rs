@@ -176,7 +176,6 @@ fn test_hypergraph_search() {
 }
 
 #[test]
-#[ignore = "k_hop_neighbors traversal logic needs fix - returns incomplete results"]
 fn test_k_hop_neighbors_simple() {
     let mut index = HypergraphIndex::new(DistanceMetric::Cosine);
 
@@ -210,7 +209,6 @@ fn test_k_hop_neighbors_simple() {
 }
 
 #[test]
-#[ignore = "k_hop_neighbors traversal logic needs fix - returns incomplete results"]
 fn test_k_hop_neighbors_complex() {
     let mut index = HypergraphIndex::new(DistanceMetric::Cosine);
 

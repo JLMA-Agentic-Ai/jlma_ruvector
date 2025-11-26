@@ -107,6 +107,7 @@ impl Parser {
                 Ok(Statement::Delete(self.parse_delete()?))
             }
             TokenKind::Set => Ok(Statement::Set(self.parse_set()?)),
+            TokenKind::Remove => Ok(Statement::Remove(self.parse_remove()?)),
             TokenKind::Return => Ok(Statement::Return(self.parse_return()?)),
             TokenKind::With => Ok(Statement::With(self.parse_with()?)),
             _ => {
@@ -174,14 +175,13 @@ impl Parser {
     fn parse_relationship_pattern(&mut self) -> ParseResult<Pattern> {
         let from = self.parse_node_pattern()?;
 
-        // Check for relationship
+        // Check for relationship - can start with `-` or `<-`
         if self.check(&TokenKind::Dash) || self.check(&TokenKind::LeftArrow) {
-            let direction = if self.match_token(&[TokenKind::LeftArrow]) {
-                Direction::Incoming
-            } else {
+            // Determine if this is an incoming relationship (<-)
+            let starts_with_incoming = self.match_token(&[TokenKind::LeftArrow]);
+            if !starts_with_incoming {
                 self.consume(TokenKind::Dash, "-")?;
-                Direction::Outgoing
-            };
+            }
 
             // Parse relationship details [r:TYPE {props} *min..max]
             let (variable, rel_type, properties, range) = if self.match_token(&[TokenKind::LeftBracket]) {
@@ -223,12 +223,28 @@ impl Parser {
                 (None, None, None, None)
             };
 
-            // Check direction
-            if direction == Direction::Outgoing {
-                self.consume(TokenKind::Arrow, "->")?;
+            // Determine final direction based on ending pattern:
+            // -[r]->  = Outgoing
+            // <-[r]-  = Incoming
+            // -[r]-   = Undirected
+            // (also handle cases where we chain with another node)
+            let direction = if self.match_token(&[TokenKind::Arrow]) {
+                // Ends with -> means Outgoing
+                Direction::Outgoing
+            } else if self.match_token(&[TokenKind::Dash]) {
+                // Ends with just -
+                if starts_with_incoming {
+                    // <-[r]- means Incoming
+                    Direction::Incoming
+                } else {
+                    // -[r]- means Undirected
+                    Direction::Undirected
+                }
             } else {
-                self.consume(TokenKind::Dash, "-")?;
-            }
+                return Err(ParseError::InvalidSyntax(
+                    "Expected '->' or '-' after relationship".to_string()
+                ));
+            };
 
             // Parse target node(s) - check for hyperedge
             self.consume(TokenKind::LeftParen, "(")?;
@@ -444,6 +460,62 @@ impl Parser {
         }
 
         Ok(SetClause { items })
+    }
+
+    fn parse_remove(&mut self) -> ParseResult<RemoveClause> {
+        self.consume(TokenKind::Remove, "REMOVE")?;
+        let mut items = vec![];
+
+        loop {
+            if let TokenKind::Identifier(var) = &self.peek().kind {
+                let var = var.clone();
+                self.advance();
+
+                if self.match_token(&[TokenKind::Dot]) {
+                    // Remove property: REMOVE n.property
+                    if let TokenKind::Identifier(prop) = &self.peek().kind {
+                        let prop = prop.clone();
+                        self.advance();
+                        items.push(RemoveItem::Property {
+                            variable: var,
+                            property: prop,
+                        });
+                    } else {
+                        return Err(ParseError::InvalidSyntax("Expected property name after '.'".to_string()));
+                    }
+                } else if self.match_token(&[TokenKind::Colon]) {
+                    // Remove labels: REMOVE n:Label1:Label2
+                    let mut labels = vec![];
+                    if let TokenKind::Identifier(label) = &self.peek().kind {
+                        labels.push(label.clone());
+                        self.advance();
+                    }
+                    // Handle multiple labels
+                    while self.match_token(&[TokenKind::Colon]) {
+                        if let TokenKind::Identifier(label) = &self.peek().kind {
+                            labels.push(label.clone());
+                            self.advance();
+                        }
+                    }
+                    items.push(RemoveItem::Labels {
+                        variable: var,
+                        labels,
+                    });
+                } else {
+                    return Err(ParseError::InvalidSyntax(
+                        "Expected '.' or ':' after variable in REMOVE".to_string()
+                    ));
+                }
+            } else {
+                return Err(ParseError::InvalidSyntax("Expected variable in REMOVE".to_string()));
+            }
+
+            if !self.match_token(&[TokenKind::Comma]) {
+                break;
+            }
+        }
+
+        Ok(RemoveClause { items })
     }
 
     fn parse_return(&mut self) -> ParseResult<ReturnClause> {

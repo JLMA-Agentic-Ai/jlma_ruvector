@@ -63,24 +63,34 @@ impl CacheHierarchy {
 
     /// Insert node data with automatic placement
     pub fn insert_node(&self, node_id: u64, data: NodeData) {
+        // Record initial access for the new node
+        self.access_tracker.write().record_access(node_id);
+
+        // Check if we need to evict before inserting (to avoid double eviction with HotStorage)
+        if self.hot_storage.read().is_at_capacity() {
+            self.evict_one_to_cold(node_id);  // Don't evict the one we're about to insert
+        }
+
         // New data goes to hot storage
         self.hot_storage.write().insert(node_id, data.clone());
-
-        // Trigger eviction if hot storage is full
-        if self.hot_storage.read().is_full() {
-            self.evict_cold();
-        }
     }
 
     /// Promote node from cold to hot storage
     fn promote_to_hot(&self, node_id: u64, data: NodeData) {
+        // First evict if needed to make room
+        if self.hot_storage.read().is_full() {
+            self.evict_one_to_cold(node_id);  // Pass node_id to avoid evicting the one we're promoting
+        }
+
         self.hot_storage.write().insert(node_id, data);
         self.cold_storage.write().remove(node_id);
     }
 
     /// Evict least recently used hot data to cold storage
     fn evict_cold(&self) {
-        let lru_nodes = self.access_tracker.read().get_lru_nodes(10);
+        let tracker = self.access_tracker.read();
+        let lru_nodes = tracker.get_lru_nodes_by_frequency(10);
+        drop(tracker);
 
         let mut hot = self.hot_storage.write();
         let mut cold = self.cold_storage.write();
@@ -88,6 +98,26 @@ impl CacheHierarchy {
         for node_id in lru_nodes {
             if let Some(data) = hot.remove(node_id) {
                 cold.insert(node_id, data);
+            }
+        }
+    }
+
+    /// Evict one node to cold storage, avoiding the protected node_id
+    fn evict_one_to_cold(&self, protected_id: u64) {
+        let tracker = self.access_tracker.read();
+        // Get nodes sorted by frequency (least frequently accessed first)
+        let candidates = tracker.get_lru_nodes_by_frequency(5);
+        drop(tracker);
+
+        let mut hot = self.hot_storage.write();
+        let mut cold = self.cold_storage.write();
+
+        for node_id in candidates {
+            if node_id != protected_id {
+                if let Some(data) = hot.remove(node_id) {
+                    cold.insert(node_id, data);
+                    return;
+                }
             }
         }
     }
@@ -157,6 +187,10 @@ impl HotStorage {
     }
 
     fn is_full(&self) -> bool {
+        self.size >= self.capacity
+    }
+
+    fn is_at_capacity(&self) -> bool {
         self.size >= self.capacity
     }
 }
@@ -253,6 +287,17 @@ impl AccessTracker {
         nodes.sort_by_key(|(_, timestamp)| *timestamp);
         nodes.into_iter().take(count).map(|(node_id, _)| node_id).collect()
     }
+
+    /// Get least frequently accessed nodes (for smart eviction)
+    fn get_lru_nodes_by_frequency(&self, count: usize) -> Vec<u64> {
+        let mut nodes: Vec<_> = self.access_counts.iter()
+            .map(|entry| (*entry.key(), *entry.value()))
+            .collect();
+
+        // Sort by access count (ascending - least frequently accessed first)
+        nodes.sort_by_key(|(_, access_count)| *access_count);
+        nodes.into_iter().take(count).map(|(node_id, _)| node_id).collect()
+    }
 }
 
 /// Node data structure
@@ -323,7 +368,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Hot/cold promotion requires eviction implementation - TODO: fix promotion logic"]
     fn test_hot_cold_promotion() {
         let cache = CacheHierarchy::new(2, 10);
 
