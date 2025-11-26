@@ -53,7 +53,10 @@ class VectorDB {
 
 module.exports = {
   VectorDB,
+  CollectionManager: nativeBinding.CollectionManager,
   version: nativeBinding.version,
   hello: nativeBinding.hello,
+  getMetrics: nativeBinding.getMetrics,
+  getHealth: nativeBinding.getHealth,
   DistanceMetric: nativeBinding.JsDistanceMetric
 };

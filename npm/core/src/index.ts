@@ -363,7 +363,8 @@ function loadNativeBinding(): NativeBinding {
 const nativeBinding = loadNativeBinding();
 
 // Re-export the VectorDB class and utility functions
-export const VectorDB = nativeBinding.VectorDB;
+// Note: NAPI-RS exports as VectorDb (lowercase d), we re-export as VectorDB for consistency
+export const VectorDB = (nativeBinding as any).VectorDb || nativeBinding.VectorDB;
 export const CollectionManager = nativeBinding.CollectionManager;
 export const version = nativeBinding.version;
 export const hello = nativeBinding.hello;
