@@ -129,6 +129,34 @@ let enhanced = layer.forward(&query, &neighbors, &weights);
 | **Snapshots** | Point-in-time backups, incremental | Disaster recovery |
 | **Cluster Metrics** | Prometheus-compatible monitoring | Observability at scale |
 
+```bash
+cargo add ruvector-raft ruvector-cluster ruvector-replication
+```
+
+```rust
+use ruvector_raft::{RaftNode, RaftNodeConfig};
+use ruvector_cluster::{ClusterManager, ConsistentHashRing};
+use ruvector_replication::{SyncManager, SyncMode};
+
+// Configure a 5-node Raft cluster
+let config = RaftNodeConfig {
+    node_id: "node-1".into(),
+    cluster_members: vec!["node-1", "node-2", "node-3", "node-4", "node-5"]
+        .into_iter().map(Into::into).collect(),
+    election_timeout_min: 150,  // ms
+    election_timeout_max: 300,  // ms
+    heartbeat_interval: 50,     // ms
+};
+let raft = RaftNode::new(config);
+
+// Auto-sharding with consistent hashing (150 virtual nodes per real node)
+let ring = ConsistentHashRing::new(64, 3); // 64 shards, replication factor 3
+let shard = ring.get_shard("my-vector-key");
+
+// Multi-master replication with conflict resolution
+let sync = SyncManager::new(SyncMode::SemiSync { min_replicas: 2 });
+```
+
 ### AI & ML
 
 | Feature | What It Does | Why It Matters |
