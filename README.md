@@ -291,6 +291,43 @@ scipix-cli mcp
 claude mcp add scipix -- scipix-cli mcp
 ```
 
+### ONNX Embeddings
+
+| Example | Description | Path |
+|---------|-------------|------|
+| [ruvector-onnx-embeddings](./examples/onnx-embeddings) | Production-ready ONNX embedding generation in pure Rust | `examples/onnx-embeddings` |
+
+**ONNX Embeddings** provides native embedding generation using ONNX Runtime — no Python required. Supports 8+ pretrained models (all-MiniLM, BGE, E5, GTE), multiple pooling strategies, GPU acceleration (CUDA, TensorRT, CoreML, WebGPU), and direct RuVector index integration for RAG pipelines.
+
+```rust
+use ruvector_onnx_embeddings::{Embedder, PretrainedModel};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Create embedder with default model (all-MiniLM-L6-v2)
+    let mut embedder = Embedder::default_model().await?;
+
+    // Generate embedding (384 dimensions)
+    let embedding = embedder.embed_one("Hello, world!")?;
+
+    // Compute semantic similarity
+    let sim = embedder.similarity(
+        "I love programming in Rust",
+        "Rust is my favorite language"
+    )?;
+    println!("Similarity: {:.4}", sim); // ~0.85
+
+    Ok(())
+}
+```
+
+**Supported Models:**
+| Model | Dimension | Speed | Best For |
+|-------|-----------|-------|----------|
+| `AllMiniLmL6V2` | 384 | Fast | General purpose (default) |
+| `BgeSmallEnV15` | 384 | Fast | Search & retrieval |
+| `AllMpnetBaseV2` | 768 | Accurate | Production RAG |
+
 ### Bindings & Tools
 
 | Crate | Description | crates.io |
