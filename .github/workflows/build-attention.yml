@@ -223,6 +223,7 @@ jobs:
 
           # Copy WASM
           if [ -d "artifacts/attention-wasm" ]; then
+            mkdir -p crates/ruvector-attention-wasm/pkg
             cp -rv artifacts/attention-wasm/* crates/ruvector-attention-wasm/pkg/
           fi
 
