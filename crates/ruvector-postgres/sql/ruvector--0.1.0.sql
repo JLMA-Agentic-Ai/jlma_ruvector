@@ -35,30 +35,18 @@ LANGUAGE C VOLATILE PARALLEL SAFE;
 CREATE TYPE ruvector;
 
 CREATE OR REPLACE FUNCTION ruvector_in(cstring) RETURNS ruvector
-AS 'MODULE_PATHNAME', 'ruvector_in' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+AS 'MODULE_PATHNAME', 'ruvector_in_fn_wrapper' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE OR REPLACE FUNCTION ruvector_out(ruvector) RETURNS cstring
-AS 'MODULE_PATHNAME', 'ruvector_out' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
-CREATE OR REPLACE FUNCTION ruvector_recv(internal) RETURNS ruvector
-AS 'MODULE_PATHNAME', 'ruvector_recv' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
-CREATE OR REPLACE FUNCTION ruvector_send(ruvector) RETURNS bytea
-AS 'MODULE_PATHNAME', 'ruvector_send' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+AS 'MODULE_PATHNAME', 'ruvector_out_fn_wrapper' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE OR REPLACE FUNCTION ruvector_typmod_in(cstring[]) RETURNS int
-AS 'MODULE_PATHNAME', 'ruvector_typmod_in' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
-CREATE OR REPLACE FUNCTION ruvector_typmod_out(int) RETURNS cstring
-AS 'MODULE_PATHNAME', 'ruvector_typmod_out' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+AS 'MODULE_PATHNAME', 'ruvector_typmod_in_fn_wrapper' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE TYPE ruvector (
     INPUT = ruvector_in,
     OUTPUT = ruvector_out,
-    RECEIVE = ruvector_recv,
-    SEND = ruvector_send,
     TYPMOD_IN = ruvector_typmod_in,
-    TYPMOD_OUT = ruvector_typmod_out,
     STORAGE = extended,
     INTERNALLENGTH = VARIABLE,
     ALIGNMENT = double
@@ -480,81 +468,81 @@ LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 -- ============================================================================
 
 -- Create sparse vector from indices and values
-CREATE OR REPLACE FUNCTION ruvector_to_sparse(indices int[], values real[], dim int)
+CREATE OR REPLACE FUNCTION ruvector_to_sparse(indices int[], "values" real[], dim int)
 RETURNS text
-AS 'MODULE_PATHNAME', 'ruvector_to_sparse_wrapper'
+AS 'MODULE_PATHNAME', 'pg_to_sparse_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- Sparse dot product
 CREATE OR REPLACE FUNCTION ruvector_sparse_dot(a text, b text)
 RETURNS real
-AS 'MODULE_PATHNAME', 'ruvector_sparse_dot_wrapper'
+AS 'MODULE_PATHNAME', 'pg_sparse_dot_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- Sparse cosine distance
 CREATE OR REPLACE FUNCTION ruvector_sparse_cosine(a text, b text)
 RETURNS real
-AS 'MODULE_PATHNAME', 'ruvector_sparse_cosine_wrapper'
+AS 'MODULE_PATHNAME', 'pg_sparse_cosine_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- Sparse euclidean distance
 CREATE OR REPLACE FUNCTION ruvector_sparse_euclidean(a text, b text)
 RETURNS real
-AS 'MODULE_PATHNAME', 'ruvector_sparse_euclidean_wrapper'
+AS 'MODULE_PATHNAME', 'pg_sparse_euclidean_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- Sparse manhattan distance
 CREATE OR REPLACE FUNCTION ruvector_sparse_manhattan(a text, b text)
 RETURNS real
-AS 'MODULE_PATHNAME', 'ruvector_sparse_manhattan_wrapper'
+AS 'MODULE_PATHNAME', 'pg_sparse_manhattan_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- Get number of non-zero elements
 CREATE OR REPLACE FUNCTION ruvector_sparse_nnz(v text)
 RETURNS int
-AS 'MODULE_PATHNAME', 'ruvector_sparse_nnz_wrapper'
+AS 'MODULE_PATHNAME', 'pg_sparse_nnz_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- Get sparse vector dimension
 CREATE OR REPLACE FUNCTION ruvector_sparse_dim(v text)
 RETURNS int
-AS 'MODULE_PATHNAME', 'ruvector_sparse_dim_wrapper'
+AS 'MODULE_PATHNAME', 'pg_sparse_dim_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- Get sparse vector norm
 CREATE OR REPLACE FUNCTION ruvector_sparse_norm(v text)
 RETURNS real
-AS 'MODULE_PATHNAME', 'ruvector_sparse_norm_wrapper'
+AS 'MODULE_PATHNAME', 'pg_sparse_norm_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- Keep top k elements
 CREATE OR REPLACE FUNCTION ruvector_sparse_top_k(v text, k int)
 RETURNS text
-AS 'MODULE_PATHNAME', 'ruvector_sparse_top_k_wrapper'
+AS 'MODULE_PATHNAME', 'pg_sparse_top_k_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- Prune elements below threshold
 CREATE OR REPLACE FUNCTION ruvector_sparse_prune(v text, threshold real)
 RETURNS text
-AS 'MODULE_PATHNAME', 'ruvector_sparse_prune_wrapper'
+AS 'MODULE_PATHNAME', 'pg_sparse_prune_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- Convert dense to sparse
 CREATE OR REPLACE FUNCTION ruvector_dense_to_sparse(v real[])
 RETURNS text
-AS 'MODULE_PATHNAME', 'ruvector_dense_to_sparse_wrapper'
+AS 'MODULE_PATHNAME', 'pg_dense_to_sparse_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- Convert sparse to dense
 CREATE OR REPLACE FUNCTION ruvector_sparse_to_dense(v text)
 RETURNS real[]
-AS 'MODULE_PATHNAME', 'ruvector_sparse_to_dense_wrapper'
+AS 'MODULE_PATHNAME', 'pg_sparse_to_dense_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- BM25 scoring
 CREATE OR REPLACE FUNCTION ruvector_sparse_bm25(query text, doc text, doc_len int, avg_doc_len real, k1 real DEFAULT 1.2, b real DEFAULT 0.75)
 RETURNS real
-AS 'MODULE_PATHNAME', 'ruvector_sparse_bm25_wrapper'
+AS 'MODULE_PATHNAME', 'pg_sparse_bm25_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- ============================================================================
@@ -573,23 +561,8 @@ RETURNS real[][]
 AS 'MODULE_PATHNAME', 'ruvector_graphsage_forward_wrapper'
 LANGUAGE C IMMUTABLE PARALLEL SAFE;
 
--- GAT (Graph Attention) forward pass
-CREATE OR REPLACE FUNCTION ruvector_gat_forward(features real[][], src int[], dst int[], out_dim int, num_heads int DEFAULT 4)
-RETURNS real[][]
-AS 'MODULE_PATHNAME', 'ruvector_gat_forward_wrapper'
-LANGUAGE C IMMUTABLE PARALLEL SAFE;
-
--- Message passing aggregate
-CREATE OR REPLACE FUNCTION ruvector_message_aggregate(messages real[][], aggregation text DEFAULT 'mean')
-RETURNS real[]
-AS 'MODULE_PATHNAME', 'ruvector_message_aggregate_wrapper'
-LANGUAGE C IMMUTABLE PARALLEL SAFE;
-
--- Readout function
-CREATE OR REPLACE FUNCTION ruvector_gnn_readout(node_embeddings real[][], readout_type text DEFAULT 'mean')
-RETURNS real[]
-AS 'MODULE_PATHNAME', 'ruvector_gnn_readout_wrapper'
-LANGUAGE C IMMUTABLE PARALLEL SAFE;
+-- Note: GAT, message_aggregate, and gnn_readout are not yet implemented
+-- They are planned for a future release
 
 -- ============================================================================
 -- Routing/Agent Functions (Tiny Dancer)

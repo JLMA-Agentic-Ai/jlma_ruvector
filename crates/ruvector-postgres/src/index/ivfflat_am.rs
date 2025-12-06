@@ -649,6 +649,10 @@ unsafe fn ruivfflat_handler(_fcinfo: pg_sys::FunctionCallInfo) -> pg_sys::Datum 
     (*amroutine).amestimateparallelscan = None;
     (*amroutine).aminitparallelscan = None;
     (*amroutine).amparallelrescan = None;
+    #[cfg(any(feature = "pg17"))]
+    {
+        (*amroutine).aminsertcleanup = None;
+    }
 
     pg_sys::Datum::from(amroutine as *mut ::std::os::raw::c_void)
 }

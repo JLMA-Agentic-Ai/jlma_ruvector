@@ -54,11 +54,8 @@ RUN cargo pgrx package \
     --pg-config /usr/lib/postgresql/${PG_VERSION}/bin/pg_config \
     --features pg${PG_VERSION}
 
-# pgrx only generates .control and .so - copy pre-written SQL file
-RUN if [ ! -f target/release/ruvector-pg${PG_VERSION}/usr/share/postgresql/${PG_VERSION}/extension/ruvector--0.1.0.sql ]; then \
-        echo "Copying pre-written SQL file..." && \
-        cp sql/ruvector--0.1.0.sql target/release/ruvector-pg${PG_VERSION}/usr/share/postgresql/${PG_VERSION}/extension/; \
-    fi
+# pgrx generates .control and .so but not SQL - copy our hand-written SQL file
+RUN cp sql/ruvector--0.1.0.sql target/release/ruvector-pg${PG_VERSION}/usr/share/postgresql/${PG_VERSION}/extension/
 
 # ============================================================================
 # Runtime Stage

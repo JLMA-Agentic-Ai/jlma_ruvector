@@ -518,6 +518,8 @@ static HNSW_AM_HANDLER: IndexAmRoutine = IndexAmRoutine {
     amcanparallel: false,
     amcaninclude: false,
     amusemaintenanceworkmem: true,
+    #[cfg(any(feature = "pg17"))]
+    amcanbuildparallel: false,      // PG17+ field
     amsummarizing: false,
     amparallelvacuumoptions: 0,
 
@@ -547,6 +549,8 @@ static HNSW_AM_HANDLER: IndexAmRoutine = IndexAmRoutine {
     amestimateparallelscan: None,
     aminitparallelscan: None,
     amparallelrescan: None,
+    #[cfg(any(feature = "pg17"))]
+    aminsertcleanup: None,          // PG17+ field
 };
 
 /// Main handler function for HNSW index access method
