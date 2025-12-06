@@ -27,12 +27,15 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        pg_version: [14, 15, 16, 17]
+        pg_version: [14, 15, 16, 17, 18]
         rust: [stable]
         include:
-          # Test on macOS for pg16
+          # Test on macOS for pg16 and pg18
           - os: macos-latest
             pg_version: 16
+            rust: stable
+          - os: macos-latest
+            pg_version: 18
             rust: stable
 
     services:

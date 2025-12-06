@@ -1,16 +1,24 @@
 # RuVector-Postgres Development & Testing Dockerfile
-# Multi-stage build for PostgreSQL 16 with pgrx and all dependencies
+# Multi-stage build with PostgreSQL version support (14-18)
+# Default: PostgreSQL 18 (latest stable)
 
+ARG PG_VERSION=18
+
+# ============================================================================
+# Builder Stage
+# ============================================================================
 FROM rust:1.83-bookworm AS builder
+
+ARG PG_VERSION
 
 # Add PostgreSQL APT repository
 RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && \
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
-# Install PostgreSQL development dependencies
+# Install PostgreSQL development dependencies for specified version
 RUN apt-get update && apt-get install -y \
-    postgresql-16 \
-    postgresql-server-dev-16 \
+    postgresql-${PG_VERSION} \
+    postgresql-server-dev-${PG_VERSION} \
     libclang-dev \
     clang \
     pkg-config \
@@ -22,11 +30,11 @@ RUN apt-get update && apt-get install -y \
 # Install pgrx (compatible with pgrx = "0.12" in Cargo.toml)
 RUN cargo install cargo-pgrx --version 0.12.6 --locked
 
-# Initialize pgrx for PostgreSQL 16
-RUN cargo pgrx init --pg16 /usr/lib/postgresql/16/bin/pg_config
+# Initialize pgrx for the specified PostgreSQL version
+RUN cargo pgrx init --pg${PG_VERSION} /usr/lib/postgresql/${PG_VERSION}/bin/pg_config
 
 # Set PGRX environment for consistent builds
-ENV PGRX_PG_CONFIG_PATH=/usr/lib/postgresql/16/bin/pg_config
+ENV PGRX_PG_CONFIG_PATH=/usr/lib/postgresql/${PG_VERSION}/bin/pg_config
 ENV PGRX_HOME=/root/.pgrx
 
 # Set working directory - use /build to avoid any parent Cargo.toml issues
@@ -40,28 +48,32 @@ COPY crates/ruvector-postgres/src ./src/
 COPY crates/ruvector-postgres/sql ./sql/
 COPY crates/ruvector-postgres/benches ./benches/
 
-# Build the extension with all features (standalone, no workspace)
+# Build the extension with the specified PG version feature
 RUN cargo pgrx package \
-    --pg-config /usr/lib/postgresql/16/bin/pg_config \
-    --features pg16
+    --pg-config /usr/lib/postgresql/${PG_VERSION}/bin/pg_config \
+    --features pg${PG_VERSION}
 
 # pgrx only generates .control and .so - copy pre-written SQL file
-RUN if [ ! -f target/release/ruvector-pg16/usr/share/postgresql/16/extension/ruvector--0.1.0.sql ]; then \
+RUN if [ ! -f target/release/ruvector-pg${PG_VERSION}/usr/share/postgresql/${PG_VERSION}/extension/ruvector--0.1.0.sql ]; then \
         echo "Copying pre-written SQL file..." && \
-        cp sql/ruvector--0.1.0.sql target/release/ruvector-pg16/usr/share/postgresql/16/extension/; \
+        cp sql/ruvector--0.1.0.sql target/release/ruvector-pg${PG_VERSION}/usr/share/postgresql/${PG_VERSION}/extension/; \
     fi
 
-# Runtime image
-FROM postgres:16-bookworm
+# ============================================================================
+# Runtime Stage
+# ============================================================================
+FROM postgres:${PG_VERSION}-bookworm
+
+ARG PG_VERSION
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy built extension from builder (path uses crate name 'ruvector' not 'ruvector_postgres')
-COPY --from=builder /build/ruvector-postgres/target/release/ruvector-pg16/usr/share/postgresql/16/extension/* /usr/share/postgresql/16/extension/
-COPY --from=builder /build/ruvector-postgres/target/release/ruvector-pg16/usr/lib/postgresql/16/lib/* /usr/lib/postgresql/16/lib/
+# Copy built extension from builder
+COPY --from=builder /build/ruvector-postgres/target/release/ruvector-pg${PG_VERSION}/usr/share/postgresql/${PG_VERSION}/extension/* /usr/share/postgresql/${PG_VERSION}/extension/
+COPY --from=builder /build/ruvector-postgres/target/release/ruvector-pg${PG_VERSION}/usr/lib/postgresql/${PG_VERSION}/lib/* /usr/lib/postgresql/${PG_VERSION}/lib/
 
 # Copy initialization script with proper permissions
 COPY --chmod=644 crates/ruvector-postgres/docker/init.sql /docker-entrypoint-initdb.d/
@@ -70,6 +82,13 @@ COPY --chmod=644 crates/ruvector-postgres/docker/init.sql /docker-entrypoint-ini
 ENV POSTGRES_USER=ruvector
 ENV POSTGRES_PASSWORD=ruvector
 ENV POSTGRES_DB=ruvector_test
+
+# Labels for version tracking
+LABEL org.opencontainers.image.title="RuVector PostgreSQL Extension"
+LABEL org.opencontainers.image.description="High-performance vector database extension for PostgreSQL"
+LABEL org.opencontainers.image.version="0.2.5"
+LABEL org.opencontainers.image.vendor="ruv.io"
+LABEL ruvector.pg.version="${PG_VERSION}"
 
 # Health check
 HEALTHCHECK --interval=5s --timeout=5s --start-period=10s --retries=5 \
