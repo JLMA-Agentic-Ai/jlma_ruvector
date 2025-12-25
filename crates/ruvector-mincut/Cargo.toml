@@ -7,7 +7,11 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 readme = "README.md"
-description = "Subpolynomial-time dynamic minimum cut algorithm with real-time graph monitoring"
+description = "World's first subpolynomial dynamic min-cut: self-healing networks, AI optimization, real-time graph analysis"
+keywords = ["graph", "minimum-cut", "network-analysis", "self-healing", "dynamic-graph"]
+categories = ["algorithms", "data-structures", "science", "mathematics", "simulation"]
+homepage = "https://ruv.io"
+documentation = "https://docs.rs/ruvector-mincut"
 
 [dependencies]
 # RuVector dependencies
@@ -72,16 +76,36 @@ name = "snn_bench"
 harness = false
 
 [[example]]
-name = "mincut_neural_optimizer"
-path = "../../examples/mincut/neural_optimizer/main.rs"
+name = "temporal_attractors"
+path = "../../examples/mincut/temporal_attractors/src/main.rs"
 required-features = ["exact"]
 
 [[example]]
-name = "mincut_causal_discovery"
+name = "strange_loop"
+path = "../../examples/mincut/strange_loop/main.rs"
+required-features = ["exact"]
+
+[[example]]
+name = "causal_discovery"
 path = "../../examples/mincut/causal_discovery/main.rs"
+required-features = ["exact"]
+
+[[example]]
+name = "time_crystal"
+path = "../../examples/mincut/time_crystal/main.rs"
 required-features = ["exact"]
 
 [[example]]
 name = "morphogenetic"
 path = "../../examples/mincut/morphogenetic/main.rs"
+required-features = ["exact"]
+
+[[example]]
+name = "neural_optimizer"
+path = "../../examples/mincut/neural_optimizer/main.rs"
+required-features = ["exact"]
+
+[[example]]
+name = "benchmarks"
+path = "../../examples/mincut/benchmarks/main.rs"
 required-features = ["exact"]

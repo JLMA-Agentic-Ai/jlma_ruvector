@@ -228,6 +228,23 @@ let current_cut = mincut.min_cut_value();
 
 ---
 
+## 🧪 Self-Organizing Network Examples
+
+Learn to build networks that think for themselves. These examples demonstrate self-healing, self-optimizing, and self-aware systems:
+
+| Example | Description | Run Command |
+|---------|-------------|-------------|
+| **Temporal Attractors** | Networks that evolve toward stable states | `cargo run -p ruvector-mincut --release --example temporal_attractors` |
+| **Strange Loop** | Self-aware systems that monitor and repair themselves | `cargo run -p ruvector-mincut --release --example strange_loop` |
+| **Causal Discovery** | Trace cause-and-effect chains in failures | `cargo run -p ruvector-mincut --release --example causal_discovery` |
+| **Time Crystal** | Self-sustaining periodic coordination patterns | `cargo run -p ruvector-mincut --release --example time_crystal` |
+| **Morphogenetic** | Networks that grow like biological organisms | `cargo run -p ruvector-mincut --release --example morphogenetic` |
+| **Neural Optimizer** | ML that learns optimal graph configurations | `cargo run -p ruvector-mincut --release --example neural_optimizer` |
+
+See the full [Examples Guide](https://github.com/ruvnet/ruvector/tree/main/examples/mincut) for detailed explanations and real-world applications.
+
+---
+
 ## 💡 Key Features & Benefits
 
 ### Core Features
