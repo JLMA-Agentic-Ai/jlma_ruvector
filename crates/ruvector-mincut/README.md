@@ -99,25 +99,32 @@ RuVector MinCut implements [arxiv:2512.13105](https://arxiv.org/abs/2512.13105) 
 
 ---
 
-## ✨ What Makes This Different (Novelty)
+## ✨ What Makes This Different
 
-### First-of-Its-Kind Implementation
+For decades, researchers faced an impossible choice: you could have *fast* updates OR *accurate* results OR *predictable* behavior — but never all three. This library is the first to deliver all of them.
 
-This is the **world's first production implementation** of the December 2025 breakthrough paper by Jin, Naderi & Yu:
+### The Four Properties No One Else Has
 
-1. **Deterministic** — No randomization, guaranteed correctness
-2. **Exact** — True minimum cut, not approximations
-3. **Fully Dynamic** — Both insertions AND deletions in subpolynomial time
-4. **Subpolynomial** — O(n^{o(1)}) per update vs O(m·n) traditional
+| Property | What It Means in Plain English | Why You Should Care |
+|----------|-------------------------------|---------------------|
+| **Always Right** | Every answer is mathematically correct — no dice rolls, no "probably correct" | Medical diagnosis, financial systems, and security can't afford "usually works" |
+| **Perfectly Predictable** | Same input always produces the same output | Essential for debugging, auditing, and reproducible research |
+| **Handles Any Change** | Add connections, remove connections — both work equally fast | Real networks grow AND shrink (failures, pruning, scaling down) |
+| **Barely Slows Down** | Processing time grows slower than any polynomial as networks scale | A billion-node network is only slightly slower than a thousand-node one |
 
-### Beyond the Paper
+> **Bottom line**: Previous solutions made you choose 2-3 of these. RuVector MinCut is the first to achieve all four — making it suitable for applications where correctness and speed both matter.
 
-We extend the paper with:
-- **256-core WASM parallel execution** for agentic chip deployment
-- **8KB compact structures** verified at compile-time
-- **Incremental boundary caching** for O(1) edge updates
-- **Batch API** with lazy evaluation
-- **Binary search instance lookup** with O(log i) complexity
+### Production-Ready Extensions
+
+We didn't just implement the research paper — we made it ready for real-world deployment:
+
+| Feature | What It Does | Real-World Benefit |
+|---------|--------------|-------------------|
+| **Runs on 256 Cores** | Splits work across many processors simultaneously | Handles massive networks in parallel |
+| **Fits in 8KB per Core** | Memory-efficient design verified at compile time | Deploys on edge devices, embedded systems, and constrained environments |
+| **Smart Caching** | Remembers previous calculations to avoid redundant work | Near-instant updates for most changes |
+| **Batch Processing** | Groups multiple changes together efficiently | High-throughput streaming applications |
+| **Lazy Evaluation** | Only computes what you actually need, when you need it | Saves resources when queries are infrequent |
 
 ---
 
@@ -127,7 +134,7 @@ We extend the paper with:
 - [Real-World Impact](#real-world-impact)
 - [The December 2025 Breakthrough](#the-december-2025-breakthrough)
 - [Applications at a Glance](#applications-at-a-glance)
-- [What Makes This Different](#-what-makes-this-different-novelty)
+- [What Makes This Different](#-what-makes-this-different)
 - [Quick Start](#-quick-start)
 - [📖 User Guide](#-user-guide)
 - [Key Features & Benefits](#-key-features--benefits)
