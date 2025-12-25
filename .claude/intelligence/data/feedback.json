@@ -335,6 +335,46 @@
       "followed": null,
       "outcome": null,
       "timestamp": "2025-12-25T21:48:14.975Z"
+    },
+    {
+      "id": "sug-1766699668353",
+      "suggested": "javascript-developer",
+      "confidence": 0.8175744761936437,
+      "followed": null,
+      "outcome": null,
+      "timestamp": "2025-12-25T21:54:28.353Z"
+    },
+    {
+      "id": "sug-1766699701340",
+      "suggested": "javascript-developer",
+      "confidence": 0.8175744761936437,
+      "followed": null,
+      "outcome": null,
+      "timestamp": "2025-12-25T21:55:01.340Z"
+    },
+    {
+      "id": "sug-1766699717533",
+      "suggested": "javascript-developer",
+      "confidence": 0.8175744761936437,
+      "followed": null,
+      "outcome": null,
+      "timestamp": "2025-12-25T21:55:17.533Z"
+    },
+    {
+      "id": "sug-1766699807019",
+      "suggested": "javascript-developer",
+      "confidence": 0.8175744761936437,
+      "followed": null,
+      "outcome": null,
+      "timestamp": "2025-12-25T21:56:47.019Z"
+    },
+    {
+      "id": "sug-1766699821655",
+      "suggested": "javascript-developer",
+      "confidence": 0.8175744761936437,
+      "followed": null,
+      "outcome": null,
+      "timestamp": "2025-12-25T21:57:01.655Z"
     }
   ],
   "followRates": {

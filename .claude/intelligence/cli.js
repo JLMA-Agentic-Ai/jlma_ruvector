@@ -48,6 +48,10 @@ v3 Features:
   suggest-next <file>             Suggest next files to edit
   should-test <file>              Check if tests should run
 
+Migration:
+  migrate [--dry-run]             Migrate JSON to native storage
+  storage-info                    Show storage backend status
+
 Swarm (Hive-Mind):
   swarm-register <id> <type>      Register agent in swarm
   swarm-coordinate <src> <dst>    Record agent coordination
@@ -383,6 +387,36 @@ Swarm (Hive-Mind):
         const file = args[1];
         const suggestion = intel.shouldSuggestTests(file);
         console.log(JSON.stringify(suggestion, null, 2));
+        break;
+      }
+
+      // === MIGRATION ===
+
+      case 'migrate': {
+        const dryRun = args.includes('--dry-run');
+        const { migrateToNative } = await import('./storage.js');
+        const results = await migrateToNative({ dryRun });
+        console.log(JSON.stringify(results, null, 2));
+        break;
+      }
+
+      case 'storage-info': {
+        const { NativeVectorStorage, NativeReasoningBank } = await import('./storage.js');
+        const vectorStore = new NativeVectorStorage();
+        const reasoningBank = new NativeReasoningBank();
+        await vectorStore.init();
+        await reasoningBank.init();
+
+        console.log(JSON.stringify({
+          vectorStorage: {
+            useNative: vectorStore.useNative,
+            count: await vectorStore.count()
+          },
+          reasoningBank: {
+            useNative: reasoningBank.useNative,
+            stats: reasoningBank.getStats()
+          }
+        }, null, 2));
         break;
       }
 

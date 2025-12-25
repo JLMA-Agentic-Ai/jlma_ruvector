@@ -1,10 +1,10 @@
 {
   "other_in_general": {
     "command-succeeded": 0.8,
-    "command-failed": -0.06121401736624558,
+    "command-failed": -0.09098399358015544,
     "_meta": {
-      "lastUpdate": "2025-12-25T21:48:47.263Z",
-      "updateCount": 5167
+      "lastUpdate": "2025-12-25T21:57:43.812Z",
+      "updateCount": 5174
     }
   },
   "test_in_general": {
@@ -54,10 +54,10 @@
   },
   "git_in_general": {
     "command-succeeded": 0.8,
-    "command-failed": -0.014850220937067752,
+    "command-failed": -0.02925466844156633,
     "_meta": {
-      "lastUpdate": "2025-12-25T21:44:55.401Z",
-      "updateCount": 301
+      "lastUpdate": "2025-12-25T21:49:40.462Z",
+      "updateCount": 304
     }
   },
   "other_in_rvlite": {
@@ -376,11 +376,11 @@
   },
   "edit_js_in_project": {
     "_meta": {
-      "lastUpdate": "2025-12-25T21:41:44.338Z",
-      "updateCount": 97
+      "lastUpdate": "2025-12-25T21:57:01.863Z",
+      "updateCount": 102
     },
     "javascript-developer": 0.75,
-    "successful-edit": 0.0601478273971287
+    "successful-edit": 0.10628257996959747
   },
   "edit_md_in_project": {
     "_meta": {
