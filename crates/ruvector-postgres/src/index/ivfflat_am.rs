@@ -1679,7 +1679,16 @@ unsafe extern "C" fn ivfflat_amvalidate(_opclass_oid: pg_sys::Oid) -> bool {
     true
 }
 
-/// Estimate parallel scan size
+/// Estimate parallel scan size (PG14/15/16 - no parameters)
+#[cfg(any(feature = "pg14", feature = "pg15", feature = "pg16"))]
+#[pg_guard]
+unsafe extern "C" fn ivfflat_amestimateparallelscan() -> Size {
+    // Size needed for parallel scan coordination
+    size_of::<IvfFlatParallelScanState>() as Size
+}
+
+/// Estimate parallel scan size (PG17+ - with parameters)
+#[cfg(feature = "pg17")]
 #[pg_guard]
 unsafe extern "C" fn ivfflat_amestimateparallelscan(
     _nkeys: ::std::os::raw::c_int,
