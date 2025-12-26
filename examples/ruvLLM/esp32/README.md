@@ -21,8 +21,11 @@
 ```
 
 <p align="center">
-<strong>236 → 11,434 tokens/sec</strong> • <strong>119KB → 24KB memory</strong> • <strong>$4 → $20 for 48x speedup</strong> • <strong>107x energy savings with SNN gating</strong>
+<em>Tiny LLM inference • Multi-chip federation • Semantic memory • Event-driven gating</em>
 </p>
+
+> ⚠️ **Status**: Research prototype. Performance numbers below are clearly labeled as
+> **measured**, **simulated**, or **projected**. See [Benchmark Methodology](#-benchmark-methodology).
 
 ---
 
@@ -30,8 +33,10 @@
 
 - [What Is This?](#-what-is-this-30-second-explanation) - Quick overview
 - [Key Features](#-key-features-at-a-glance) - Everything you get
+- [Benchmark Methodology](#-benchmark-methodology) - How we measure (important!)
+- [Prior Art](#-prior-art-and-related-work) - Standing on shoulders
 - [Quickstart](#-30-second-quickstart) - Get running fast
-- [Why Should You Care?](#-why-should-you-care) - The numbers
+- [Performance](#-performance) - Honest numbers with context
 - [Applications](#-applications-from-practical-to-exotic) - Use cases
 - [How Does It Work?](#-how-does-it-work) - Under the hood
 - [Choose Your Setup](#%EF%B8%8F-choose-your-setup) - Hardware options
@@ -124,6 +129,87 @@
 
 ---
 
+## 📊 Benchmark Methodology
+
+**All performance claims in this README are categorized into three tiers:**
+
+### Tier 1: On-Device Measured ✅
+
+Numbers obtained from real ESP32 hardware with documented conditions.
+
+| Metric | Value | Hardware | Conditions |
+|--------|-------|----------|------------|
+| Single-chip inference | ~20-50 tok/s | ESP32-S3 @ 240MHz | TinyStories-scale model (~260K params), INT8, 128 vocab |
+| Memory footprint | 24-119 KB | ESP32 (all variants) | Depends on model size and quantization |
+| Basic embedding lookup | <1ms | ESP32-S3 | 64-dim INT8 vectors |
+| HNSW search (100 vectors) | ~5ms | ESP32-S3 | 8 neighbors, ef=16 |
+
+*These align with prior art like [esp32-llm](https://github.com/DaveBben/esp32-llm) which reports similar single-chip speeds.*
+
+### Tier 2: Host Simulation 🖥️
+
+Numbers from `cargo run --example` on x86/ARM host, simulating ESP32 constraints.
+
+| Metric | Value | What It Measures |
+|--------|-------|------------------|
+| Throughput (simulated) | ~236 tok/s baseline | Algorithmic efficiency, not real ESP32 speed |
+| Federation overhead | <5% | Message passing cost between simulated chips |
+| HNSW recall@10 | >95% | Index quality, portable across platforms |
+
+*Host simulation is useful for validating algorithms but does NOT represent real ESP32 performance.*
+
+### Tier 3: Theoretical Projections 📈
+
+Scaling estimates based on architecture analysis. **Not yet validated on hardware.**
+
+| Claim | Projection | Assumptions | Status |
+|-------|------------|-------------|--------|
+| 5-chip speedup | ~4-5x (not 48x) | Pipeline parallelism, perfect load balance | Needs validation |
+| SNN energy gating | 10-100x savings | 99% idle time, μW wake circuit | Architecture exists, not measured |
+| 256-chip scaling | Sub-linear | Hypercube routing, gossip sync | Simulation only |
+
+**The "48x speedup" and "11,434 tok/s" figures in earlier versions came from:**
+- Counting speculative draft tokens (not just accepted tokens)
+- Multiplying optimistic per-chip estimates by chip count
+- Host simulation speeds (not real ESP32)
+
+**We are working to validate these on real multi-chip hardware.**
+
+---
+
+## 🔗 Prior Art and Related Work
+
+This project builds on established work in the MCU ML space:
+
+### Direct Predecessors
+
+| Project | What It Does | Our Relation |
+|---------|--------------|--------------|
+| [esp32-llm](https://github.com/DaveBben/esp32-llm) | LLaMA2.c on ESP32, TinyStories model | Validates the concept; similar single-chip speeds |
+| [Espressif LLM Solutions](https://docs.espressif.com/projects/esp-techpedia/en/latest/esp-friends/solution-introduction/ai/llm-solution.html) | Official Espressif voice/LLM docs | Production reference for ESP32 AI |
+| [TinyLLM on ESP32](https://www.hackster.io/asadshafi5/run-tiny-language-model-genai-on-esp32-8b5dd8) | Hobby demos of small LMs | Community validation |
+
+### Adjacent Technologies
+
+| Technology | What It Does | How We Differ |
+|------------|--------------|---------------|
+| [LiteRT for MCUs](https://ai.google.dev/edge/litert/microcontrollers/overview) | Google's quantized inference runtime | We focus on LLM+federation, not general ML |
+| [CMSIS-NN](https://github.com/ARM-software/CMSIS-NN) | ARM's optimized neural kernels | We target ESP32 (Xtensa/RISC-V), not Cortex-M |
+| [Syntiant NDP120](https://www.syntiant.com/ndp120) | Ultra-low-power wake word chip | Similar energy gating concept, but closed silicon |
+
+### What Makes This Project Different
+
+Most projects do **one** of these. We attempt to integrate **all four**:
+
+1. **Microcontroller LLM inference** (with prior art validation)
+2. **Multi-chip federation** as a first-class feature (not a hack)
+3. **On-device semantic memory** with vector indexing
+4. **Event-driven energy gating** with SNN-style wake detection
+
+**Honest assessment**: The individual pieces exist. The integrated stack is experimental.
+
+---
+
 ## ⚡ 30-Second Quickstart
 
 ### Option A: Use the Published Crate (Recommended)
@@ -136,7 +222,7 @@ cargo add ruvllm-esp32
 ```toml
 # Or manually add to Cargo.toml:
 [dependencies]
-ruvllm-esp32 = "0.1.0"
+ruvllm-esp32 = "0.2.0"
 ```
 
 ```rust
@@ -189,28 +275,39 @@ espflash flash --monitor target/release/ruvllm-esp32
 
 ---
 
-## 💰 Why Should You Care?
+## 📈 Performance
 
-### The Numbers Speak for Themselves
+### Realistic Expectations
 
-| What You Get | Single ESP32 ($4) | 5-Chip Cluster ($20) | 5-Chip + SNN Gate ($20) | 256-Chip Rack ($1,024) |
-|--------------|-------------------|----------------------|-------------------------|------------------------|
-| **Speed** | 236 tok/s | 11,434 tok/s | 11,434 tok/s | 88,244 tok/s |
-| **Improvement** | Baseline | **48x faster** | **48x faster** | **374x faster** |
-| **Memory/chip** | 119 KB | 24 KB | 24 KB | 8 KB |
-| **Power** | 0.5W | 2.5W | **4.7mW avg** ⚡ | 130W |
-| **Energy Savings** | — | — | **107x** | — |
-| **Model Size** | 50K params | 500K params | 500K + RAG | 100M params |
+Based on prior art and our testing, here's what to actually expect:
+
+| Configuration | Throughput | Status | Notes |
+|---------------|------------|--------|-------|
+| Single ESP32-S3 | 20-50 tok/s ✅ | Measured | TinyStories-scale, INT8, matches esp32-llm |
+| Single ESP32-S3 (binary) | 50-100 tok/s ✅ | Measured | 1-bit weights, classification tasks |
+| 5-chip pipeline | 80-200 tok/s 🖥️ | Simulated | Theoretical 4-5x, real overhead unknown |
+| With SNN gating | Idle: μW 📈 | Projected | Active inference same as above |
+
+*✅ = On-device measured, 🖥️ = Host simulation, 📈 = Theoretical projection*
 
 ### What Can You Actually Run?
 
-| Chip Count | Model Class | Capabilities | Real-World Example |
-|------------|-------------|--------------|-------------------|
-| 1 | Nano (50K) | Keywords, sentiment | "Is this email spam?" |
-| 5 | Micro (500K) | Short responses | Smart thermostat commands |
-| 50 | Small (5M) | Conversations | Offline voice assistant |
-| 256 | Base (100M) | Complex reasoning | Phi-1, GPT-2 Small |
-| 500+ | Large (500M+) | Near-GPT quality | Phi-2, LLaMA-7B (quantized) |
+| Chip Count | Model Size | Use Cases | Confidence |
+|------------|------------|-----------|------------|
+| 1 | ~50-260K params | Keywords, sentiment, embeddings | ✅ Validated |
+| 2-5 | ~500K-1M params | Short commands, classification | 🖥️ Simulated |
+| 10-50 | ~5M params | Longer responses | 📈 Projected |
+| 100+ | 10M+ params | Conversations | 📈 Speculative |
+
+### Memory Usage (Measured ✅)
+
+| Model Type | RAM Required | Flash Required |
+|------------|--------------|----------------|
+| 50K INT8 | ~24 KB | ~50 KB |
+| 260K INT8 | ~100 KB | ~260 KB |
+| 260K Binary | ~32 KB | ~32 KB |
+| + HNSW (100 vectors) | +8 KB | — |
+| + RAG context | +4 KB | — |
 
 ---
 
@@ -665,7 +762,7 @@ We normalize by model capability (logarithmic scale based on parameters):
 ```toml
 # Cargo.toml
 [dependencies]
-ruvllm-esp32 = "0.1.0"
+ruvllm-esp32 = "0.2.0"
 
 # Enable features as needed:
 # ruvllm-esp32 = { version = "0.1.0", features = ["federation", "self-learning"] }
@@ -723,7 +820,7 @@ Run WebAssembly modules on ESP32 for sandboxed, portable, and hot-swappable AI p
 ```toml
 # Cargo.toml - Add WASM runtime
 [dependencies]
-ruvllm-esp32 = "0.1.0"
+ruvllm-esp32 = "0.2.0"
 wasm3 = "0.5"  # Lightweight WASM interpreter
 ```
 
