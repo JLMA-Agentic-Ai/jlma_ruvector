@@ -354,11 +354,10 @@ mod tests {
     fn test_confidence_calculation() {
         let extractor = PatternExtractor::new(2);
 
-        // Consistent trajectories
-        let trajs: Vec<&QueryTrajectory> = vec![
-            &QueryTrajectory::new(vec![1.0], vec![1], 1000, 50, 10),
-            &QueryTrajectory::new(vec![1.0], vec![1], 1000, 50, 10),
-        ];
+        // Consistent trajectories - create bindings first to avoid temporary value drop
+        let traj1 = QueryTrajectory::new(vec![1.0], vec![1], 1000, 50, 10);
+        let traj2 = QueryTrajectory::new(vec![1.0], vec![1], 1000, 50, 10);
+        let trajs: Vec<&QueryTrajectory> = vec![&traj1, &traj2];
 
         let confidence = extractor.calculate_confidence(&trajs);
         assert!(confidence > 0.0 && confidence <= 1.0);

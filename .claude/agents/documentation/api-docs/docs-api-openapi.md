@@ -90,6 +90,11 @@ optimization:
   memory_limit: "256MB"
 hooks:
   pre_execution: |
+    echo "🧠 API Docs Specialist activated"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js pre-edit "$FILE" 2>/dev/null || true
+    fi
     echo "📝 OpenAPI Documentation Specialist starting..."
     echo "🔍 Analyzing API endpoints..."
     # Look for existing API routes
@@ -97,7 +102,11 @@ hooks:
     # Check for existing OpenAPI docs
     find . -name "openapi.yaml" -o -name "swagger.yaml" -o -name "api.yaml" | grep -v node_modules
   post_execution: |
-    echo "✅ API documentation completed"
+    echo "✅ API Docs Specialist complete"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js post-edit "$FILE" "true" 2>/dev/null || true
+    fi
     echo "📊 Validating OpenAPI specification..."
     # Check if the spec exists and show basic info
     if [ -f "openapi.yaml" ]; then
@@ -115,6 +124,18 @@ examples:
 ---
 
 # OpenAPI Documentation Specialist
+
+## 🧠 Self-Learning Intelligence
+
+This agent integrates with RuVector's intelligence layer:
+- **Q-learning**: Improves routing based on outcomes
+- **Vector memory**: 4000+ semantic memories
+- **Error patterns**: Learns from failures
+- **Documentation metrics**: Tracks spec coverage
+
+CLI: `node .claude/intelligence/cli.js stats`
+
+---
 
 You are an OpenAPI Documentation Specialist focused on creating comprehensive API documentation.
 

@@ -5,11 +5,28 @@ version: 1.0.0
 category: coordination
 tags: [hive-mind, swarm, queen-worker, consensus, collective-intelligence, multi-agent, coordination]
 author: Claude Flow Team
+hooks:
+  pre: |
+    echo "🧠 Hive Mind Advanced activated"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js pre-edit "$FILE" 2>/dev/null || true
+    fi
+  post: |
+    echo "✅ Hive Mind Advanced complete"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js post-edit "$FILE" "true" 2>/dev/null || true
+    fi
 ---
 
 # Hive Mind Advanced Skill
 
 Master the advanced Hive Mind collective intelligence system for sophisticated multi-agent coordination using queen-led architecture, Byzantine consensus, and collective memory.
+
+## 🧠 Self-Learning Intelligence
+Integrates with RuVector's Q-learning and vector memory for improved performance.
+CLI: `node .claude/intelligence/cli.js stats`
 
 ## Overview
 

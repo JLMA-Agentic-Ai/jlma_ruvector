@@ -1,6 +1,48 @@
-# RuVector-Postgres Docker Infrastructure
+# RuVector-Postgres v2 Docker
 
-Docker-based development and testing environment for the ruvector-postgres PostgreSQL extension.
+High-performance PostgreSQL vector database extension with 230+ SQL functions, SIMD acceleration, Flash Attention, GNN layers, hybrid search, multi-tenancy, and self-healing capabilities.
+
+## Docker Hub
+
+```bash
+# Pull the latest image
+docker pull ruvector/ruvector-postgres:latest
+
+# Or specific PostgreSQL version
+docker pull ruvector/ruvector-postgres:2.0.0-pg17
+docker pull ruvector/ruvector-postgres:2.0.0-pg16
+docker pull ruvector/ruvector-postgres:2.0.0-pg15
+docker pull ruvector/ruvector-postgres:2.0.0-pg14
+
+# Run container
+docker run -d \
+  --name ruvector \
+  -p 5432:5432 \
+  -e POSTGRES_PASSWORD=secret \
+  ruvector/ruvector-postgres:latest
+
+# Connect and test
+psql -h localhost -U ruvector -d ruvector_test -c "SELECT ruvector_version();"
+```
+
+## v2 Features
+
+| Feature | Description | SQL Functions |
+|---------|-------------|---------------|
+| **Core Vectors** | pgvector-compatible vector type | `vector`, `<->`, `<=>`, `<#>` |
+| **SIMD** | AVX2/AVX512/NEON acceleration | `ruvector_simd_info()` |
+| **HNSW Index** | Approximate nearest neighbor | `CREATE INDEX ... USING hnsw` |
+| **IVFFlat Index** | Inverted file index | `CREATE INDEX ... USING ivfflat` |
+| **Quantization** | Binary, scalar, product quantization | 6 functions |
+| **Flash Attention** | Memory-efficient attention | `ruvector_flash_attention()` |
+| **Multi-Head Attention** | Transformer attention | `ruvector_multi_head_attention()` |
+| **GNN Layers** | GCN, GraphSAGE, GAT | 5+ functions |
+| **Hybrid Search** | BM25 + vector fusion | 7 functions |
+| **Multi-Tenancy** | Tenant isolation, quotas | 17 functions |
+| **Self-Healing** | Automatic recovery | 23 functions |
+| **Self-Learning** | Adaptive optimization | 10 functions |
+| **Hyperbolic** | Poincaré/Lorentz embeddings | 8+ functions |
+| **Graph** | Cypher-style queries | 25+ functions |
 
 ## Quick Start
 

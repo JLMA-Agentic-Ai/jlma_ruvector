@@ -17,7 +17,7 @@ fn generate_vectors(n: usize, dims: usize, seed: u64) -> Vec<Vec<f32>> {
     (0..n)
         .map(|_| {
             (0..dims)
-                .map(|_| rng.random_range(-1.0..1.0))
+                .map(|_| rng.gen_range(-1.0..1.0))
                 .collect()
         })
         .collect()
@@ -126,7 +126,8 @@ fn bench_sq8_search(c: &mut Criterion) {
                         .collect();
 
                     distances.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
-                    black_box(&distances[..10])
+                    let top_k: Vec<_> = distances[..10].to_vec();
+                    black_box(top_k)
                 });
             },
         );
@@ -153,7 +154,8 @@ fn bench_sq8_search(c: &mut Criterion) {
                         .collect();
 
                     distances.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
-                    black_box(&distances[..10])
+                    let top_k: Vec<_> = distances[..10].to_vec();
+                    black_box(top_k)
                 });
             },
         );
@@ -239,7 +241,8 @@ fn bench_binary_search(c: &mut Criterion) {
                         .collect();
 
                     distances.sort_by_key(|k| k.1);
-                    black_box(&distances[..10])
+                    let top_k: Vec<_> = distances[..10].to_vec();
+                    black_box(top_k)
                 });
             },
         );
@@ -255,10 +258,10 @@ fn bench_binary_search(c: &mut Criterion) {
 fn bench_pq_adc_distance(c: &mut Criterion) {
     let mut group = c.benchmark_group("pq_adc_distance");
 
-    for m in [8, 16, 32, 48, 64].iter() {
-        let k = 256;
-        let codes: Vec<u8> = (0..*m).map(|i| (i * 7) % k).collect();
-        let pq = ProductVec::new((*m as usize * 32) as u16, *m, k, codes);
+    for m in [8u8, 16, 32, 48, 64].iter() {
+        let k: usize = 256;  // Number of centroids
+        let codes: Vec<u8> = (0..*m).map(|i| ((i * 7) % k as u8) as u8).collect();
+        let pq = ProductVec::new((*m as usize * 32) as u16, *m, 255, codes);
 
         // Create distance table
         let mut table = Vec::with_capacity(*m as usize * k as usize);
@@ -333,7 +336,7 @@ fn bench_compression_comparison(c: &mut Criterion) {
             |bench, _| {
                 bench.iter(|| {
                     let m = (dims / 32).min(64);
-                    let pq = black_box(ProductVec::new(*dims as u16, m as u8, 256, vec![0; m]));
+                    let pq = black_box(ProductVec::new(*dims as u16, m as u8, 255, vec![0; m]));
                     let compressed = pq.memory_size();
                     let ratio = original_size as f32 / compressed as f32;
                     black_box(ratio)

@@ -2,8 +2,11 @@
 //!
 //! These tests ensure that ruvector produces the same results as pgvector
 //! for identical operations, ensuring drop-in replacement compatibility.
+//!
+//! Run with: `cargo pgrx test`
 
-#[cfg(any(test, feature = "pg_test"))]
+#![cfg(feature = "pg_test")]
+
 #[pgrx::pg_schema]
 mod pgvector_compat_tests {
     use pgrx::prelude::*;

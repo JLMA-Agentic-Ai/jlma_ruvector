@@ -12,7 +12,7 @@
 //! - TOAST handling for large vectors
 //! - Optimized memory layouts
 
-mod vector;
+pub mod vector;
 mod halfvec;
 mod sparsevec;
 mod binaryvec;

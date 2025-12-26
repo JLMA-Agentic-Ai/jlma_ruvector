@@ -463,12 +463,14 @@ pub fn format_turtle(triples: &[Triple]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::ast::{Literal, Iri};
+    use super::super::executor::SelectResult;
     use std::collections::HashMap;
 
     fn create_test_select() -> QueryResult {
         let mut binding = HashMap::new();
         binding.insert("name".to_string(), RdfTerm::literal("Alice"));
-        binding.insert("age".to_string(), RdfTerm::Literal(Literal::integer(30)));
+        binding.insert("age".to_string(), RdfTerm::literal("30"));
 
         QueryResult::Select(SelectResult {
             variables: vec!["name".to_string(), "age".to_string()],

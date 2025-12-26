@@ -166,7 +166,7 @@ fn test_scalarvec_distance_int() {
 fn test_productvec_creation() {
     let dims = 128;
     let m = 8;
-    let k = 256;
+    let k = 255; // Max u8 value
     let codes = vec![1, 2, 3, 4, 5, 6, 7, 8];
 
     let pq = ProductVec::new(dims as u16, m, k, codes.clone());
@@ -179,7 +179,7 @@ fn test_productvec_creation() {
 
 #[test]
 fn test_productvec_dims_per_subspace() {
-    let pq = ProductVec::new(1536, 48, 256, vec![0; 48]);
+    let pq = ProductVec::new(1536, 48, 255, vec![0; 48]);
     assert_eq!(pq.dims_per_subspace(), 32); // 1536 / 48 = 32
 }
 
@@ -187,7 +187,7 @@ fn test_productvec_dims_per_subspace() {
 fn test_productvec_compression() {
     let dims = 1536;
     let m = 48;
-    let pq = ProductVec::new(dims as u16, m, 256, vec![0; m as usize]);
+    let pq = ProductVec::new(dims as u16, m, 255, vec![0; m as usize]);
 
     // Original: 1536 * 4 = 6144 bytes
     // Compressed: 48 bytes
@@ -233,8 +233,8 @@ fn test_productvec_adc_distance_nested() {
 
 #[test]
 fn test_productvec_memory_size() {
-    let m = 48;
-    let pq = ProductVec::new(1536, m, 256, vec![0; m as usize]);
+    let m: u8 = 48;
+    let pq = ProductVec::new(1536, m, 255, vec![0; m as usize]);
 
     // Should be small (struct overhead + 48 bytes for codes)
     let mem = pq.memory_size();
@@ -278,9 +278,9 @@ fn test_scalarvec_simd_consistency() {
 #[test]
 fn test_productvec_simd_consistency() {
     // Large enough to trigger SIMD paths
-    let m = 32;
-    let k = 256;
-    let codes: Vec<u8> = (0..m).map(|i| (i * 7) % k).collect();
+    let m: u8 = 32;
+    let k: u8 = 255;
+    let codes: Vec<u8> = (0..m).map(|i| ((i as u16 * 7) % k as u16) as u8).collect();
 
     let pq = ProductVec::new(1024, m, k, codes);
 
@@ -369,10 +369,10 @@ fn test_scalarvec_constant() {
 
 #[test]
 fn test_productvec_max_code() {
-    let codes = vec![255, 255, 255, 255]; // Max u8 values
-    let pq = ProductVec::new(64, 4, 256, codes);
+    let codes = vec![254, 254, 254, 254]; // Near max u8 values
+    let pq = ProductVec::new(64, 4, 255, codes);
 
-    assert_eq!(pq.codes()[0], 255);
+    assert_eq!(pq.codes()[0], 254);
 }
 
 // ============================================================================
@@ -410,8 +410,8 @@ fn test_memory_savings_scalar() {
 #[test]
 fn test_memory_savings_product() {
     let dims = 1536;
-    let m = 48;
-    let pq = ProductVec::new(dims as u16, m, 256, vec![0; m as usize]);
+    let m: u8 = 48;
+    let pq = ProductVec::new(dims as u16, m, 255, vec![0; m as usize]);
 
     let original_size = dims * std::mem::size_of::<f32>();
     let compressed_size = pq.memory_size();

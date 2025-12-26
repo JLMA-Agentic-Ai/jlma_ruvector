@@ -6,8 +6,17 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14--17-blue.svg)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-available-blue.svg)](https://hub.docker.com/r/ruvnet/ruvector-postgres)
 [![npm](https://img.shields.io/npm/v/@ruvector/core.svg)](https://www.npmjs.com/package/@ruvector/core)
+[![Security](https://img.shields.io/badge/Security-Audited-green.svg)](docs/SECURITY_AUDIT_REPORT.md)
 
 **The most advanced PostgreSQL vector database extension.** A drop-in pgvector replacement with 77+ SQL functions, SIMD acceleration, 39 attention mechanisms, GNN layers, hyperbolic embeddings, SPARQL/RDF support, and self-learning capabilities.
+
+## v2.0.0 Highlights (December 2025)
+
+- **IVFFlat Index**: Full inverted list storage with proper page management
+- **HNSW Index**: Fixed query execution with heap scan integration
+- **Security Audit**: 3 critical SQL injection vulnerabilities fixed
+- **Multi-tenant**: Validated tenant isolation with parameterized queries
+- **GNN Module**: Complete Graph Neural Network operators
 
 ## Why RuVector?
 

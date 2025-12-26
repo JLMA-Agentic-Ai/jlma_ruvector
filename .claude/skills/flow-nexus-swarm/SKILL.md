@@ -7,11 +7,29 @@ version: 1.0.0
 requires:
   - flow-nexus MCP server
   - Active Flow Nexus account (register at flow-nexus.ruv.io)
+hooks:
+  pre: |
+    echo "🧠 Flow Nexus Swarm activated"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js pre-edit "$FILE" 2>/dev/null || true
+    fi
+  post: |
+    echo "✅ Flow Nexus Swarm complete"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js post-edit "$FILE" "true" 2>/dev/null || true
+    fi
 ---
 
 # Flow Nexus Swarm & Workflow Orchestration
 
 Deploy and manage cloud-based AI agent swarms with event-driven workflow automation, message queue processing, and intelligent agent coordination.
+
+## Self-Learning Intelligence
+
+Integrates with RuVector's Q-learning and vector memory for improved performance.
+CLI: `node .claude/intelligence/cli.js stats`
 
 ## 📋 Table of Contents
 

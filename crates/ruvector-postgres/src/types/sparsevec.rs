@@ -587,7 +587,7 @@ mod tests {
     }
 }
 
-#[cfg(any(test, feature = "pg_test"))]
+#[cfg(feature = "pg_test")]
 #[pg_schema]
 mod pg_tests {
     use super::*;

@@ -119,10 +119,10 @@ fn bench_scalarvec_quantization(c: &mut Criterion) {
 fn bench_productvec_adc_distance(c: &mut Criterion) {
     let mut group = c.benchmark_group("productvec_adc_distance");
 
-    for m in [8, 16, 32, 48, 64].iter() {
-        let k = 256;
-        let codes: Vec<u8> = (0..*m).map(|i| (i * 7) % k).collect();
-        let pq = ProductVec::new((*m as usize * 32) as u16, *m, k, codes);
+    for m in [8u8, 16, 32, 48, 64].iter() {
+        let k: usize = 256;
+        let codes: Vec<u8> = (0..*m).map(|i| ((i * 7) % k as u8) as u8).collect();
+        let pq = ProductVec::new((*m as usize * 32) as u16, *m, 255, codes);
 
         // Create distance table
         let mut table = Vec::with_capacity(*m as usize * k as usize);
@@ -185,7 +185,7 @@ fn bench_compression_ratios(c: &mut Criterion) {
 
     group.bench_function("product_quantize", |bencher| {
         bencher.iter(|| {
-            let pq = black_box(ProductVec::new(dims as u16, 48, 256, vec![0; 48]));
+            let pq = black_box(ProductVec::new(dims as u16, 48, 255, vec![0; 48]));
             let ratio = original_size as f32 / pq.memory_size() as f32;
             black_box(ratio)
         });

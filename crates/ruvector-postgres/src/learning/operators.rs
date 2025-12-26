@@ -359,7 +359,7 @@ fn ruvector_clear_learning(
     Ok(format!("Cleared all learning data for table '{}'", table_name))
 }
 
-#[cfg(any(test, feature = "pg_test"))]
+#[cfg(feature = "pg_test")]
 #[pg_schema]
 mod tests {
     use super::*;
@@ -409,13 +409,13 @@ mod tests {
             ).unwrap();
         }
 
-        let result = ruvector_extract_patterns("test_patterns", Some(5));
+        let result = ruvector_extract_patterns("test_patterns", 5);
         assert!(result.is_ok());
     }
 
     #[pg_test]
     fn test_auto_tune() {
-        ruvector_enable_learning("test_autotune", None).unwrap();
+        ruvector_enable_learning("test_autotune", 1000).unwrap();
 
         // Record some trajectories
         for i in 0..10 {
@@ -431,8 +431,8 @@ mod tests {
 
         let result = ruvector_auto_tune(
             "test_autotune",
-            Some("balanced"),
-            None,
+            "balanced",
+            1.0,
         );
 
         assert!(result.is_ok());
@@ -440,7 +440,7 @@ mod tests {
 
     #[pg_test]
     fn test_get_search_params() {
-        ruvector_enable_learning("test_search_params", None).unwrap();
+        ruvector_enable_learning("test_search_params", 1000).unwrap();
 
         // Record and extract patterns first
         for i in 0..20 {
@@ -454,7 +454,7 @@ mod tests {
             ).unwrap();
         }
 
-        ruvector_extract_patterns("test_search_params", Some(3)).unwrap();
+        ruvector_extract_patterns("test_search_params", 3).unwrap();
 
         let result = ruvector_get_search_params(
             "test_search_params",

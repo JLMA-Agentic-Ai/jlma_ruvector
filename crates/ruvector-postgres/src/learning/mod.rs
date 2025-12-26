@@ -12,7 +12,7 @@ pub mod operators;
 pub use trajectory::{QueryTrajectory, TrajectoryTracker};
 pub use patterns::{LearnedPattern, PatternExtractor};
 pub use reasoning_bank::ReasoningBank;
-pub use optimizer::{SearchOptimizer, SearchParams};
+pub use optimizer::{SearchOptimizer, SearchParams, OptimizationTarget};
 
 use std::sync::Arc;
 use dashmap::DashMap;

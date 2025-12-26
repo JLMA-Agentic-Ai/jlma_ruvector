@@ -290,7 +290,7 @@ pub fn ruvector_attention_scores(
     attention.attention_scores(&query, &key_refs)
 }
 
-#[cfg(any(test, feature = "pg_test"))]
+#[cfg(feature = "pg_test")]
 #[pgrx::pg_schema]
 mod tests {
     use super::*;

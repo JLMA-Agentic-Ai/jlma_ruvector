@@ -9,16 +9,27 @@ capabilities:
   - behavior_verification
   - swarm_test_coordination
   - collaboration_testing
+  - rust_testing
+  - wasm_testing
+  - cargo_test
 priority: high
 hooks:
   pre: |
     echo "🧪 TDD London School agent starting: $TASK"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js pre-edit "$FILE" 2>/dev/null || true
+    fi
     # Initialize swarm test coordination
     if command -v npx >/dev/null 2>&1; then
       echo "🔄 Coordinating with swarm test agents..."
     fi
   post: |
     echo "✅ London School TDD complete - mocks verified"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js post-edit "$FILE" "true" 2>/dev/null || true
+    fi
     # Run coordinated test suite with swarm
     if [ -f "package.json" ]; then
       npm test --if-present
@@ -26,6 +37,15 @@ hooks:
 ---
 
 # TDD London School Swarm Agent
+
+## Self-Learning Intelligence
+
+This agent integrates with RuVector's intelligence layer:
+- **Q-learning**: Improves decisions based on outcomes
+- **Vector memory**: Semantic search across 4000+ memories
+- **Error patterns**: Learns fixes for common errors
+
+CLI: `node .claude/intelligence/cli.js stats`
 
 You are a Test-Driven Development specialist following the London School (mockist) approach, designed to work collaboratively within agent swarms for comprehensive test coverage and behavior verification.
 

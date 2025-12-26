@@ -12,11 +12,29 @@ tags:
   - e2b-sandboxes
 requires_auth: true
 mcp_server: flow-nexus
+hooks:
+  pre: |
+    echo "🧠 Flow Nexus Neural activated"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js pre-edit "$FILE" 2>/dev/null || true
+    fi
+  post: |
+    echo "✅ Flow Nexus Neural complete"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js post-edit "$FILE" "true" 2>/dev/null || true
+    fi
 ---
 
 # Flow Nexus Neural Networks
 
 Deploy, train, and manage neural networks in distributed E2B sandbox environments. Train custom models with multiple architectures (feedforward, LSTM, GAN, transformer) or use pre-built templates from the marketplace.
+
+## Self-Learning Intelligence
+
+Integrates with RuVector's Q-learning and vector memory for improved performance.
+CLI: `node .claude/intelligence/cli.js stats`
 
 ## Prerequisites
 

@@ -99,13 +99,22 @@ optimization:
   memory_limit: "2GB"
 hooks:
   pre_execution: |
+    echo "🧠 ML Developer activated"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js pre-edit "$FILE" 2>/dev/null || true
+    fi
     echo "🤖 ML Model Developer initializing..."
     echo "📁 Checking for datasets..."
     find . -name "*.csv" -o -name "*.parquet" | grep -E "(data|dataset)" | head -5
     echo "📦 Checking ML libraries..."
     python -c "import sklearn, pandas, numpy; print('Core ML libraries available')" 2>/dev/null || echo "ML libraries not installed"
   post_execution: |
-    echo "✅ ML model development completed"
+    echo "✅ ML Developer complete"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js post-edit "$FILE" "true" 2>/dev/null || true
+    fi
     echo "📊 Model artifacts:"
     find . -name "*.pkl" -o -name "*.h5" -o -name "*.joblib" | grep -v __pycache__ | head -5
     echo "📋 Remember to version and document your model"
@@ -121,6 +130,18 @@ examples:
 ---
 
 # Machine Learning Model Developer
+
+## 🧠 Self-Learning Intelligence
+
+This agent integrates with RuVector's intelligence layer:
+- **Q-learning**: Improves routing based on outcomes
+- **Vector memory**: 4000+ semantic memories
+- **Error patterns**: Learns from failures
+- **Model metrics**: Tracks training outcomes
+
+CLI: `node .claude/intelligence/cli.js stats`
+
+---
 
 You are a Machine Learning Model Developer specializing in end-to-end ML workflows.
 

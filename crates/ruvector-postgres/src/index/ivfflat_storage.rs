@@ -10,12 +10,14 @@ use pgrx::prelude::*;
 use pgrx::pg_sys;
 use std::ptr;
 use std::slice;
-
-use crate::types::RuVector;
+use std::mem::size_of;
 
 // ============================================================================
-// Page Layout Constants
+// Constants
 // ============================================================================
+
+/// P_NEW equivalent for allocating new pages
+const P_NEW_BLOCK: pg_sys::BlockNumber = pg_sys::InvalidBlockNumber;
 
 /// Maximum number of centroids per page
 const CENTROIDS_PER_PAGE: usize = 32;
@@ -37,15 +39,16 @@ pub unsafe fn write_centroids(
     let mut written = 0;
 
     while written < centroids.len() {
-        let buffer = pg_sys::ReadBuffer(index, pg_sys::P_NEW);
+        let buffer = pg_sys::ReadBuffer(index, P_NEW_BLOCK);
         let actual_page = pg_sys::BufferGetBlockNumber(buffer);
 
         pg_sys::LockBuffer(buffer, pg_sys::BUFFER_LOCK_EXCLUSIVE as i32);
 
         let page = pg_sys::BufferGetPage(buffer);
-        pg_sys::PageInit(page, pg_sys::BLCKSZ as usize, 0);
+        pg_sys::PageInit(page, pg_sys::BLCKSZ as pg_sys::Size, 0);
 
-        let page_data = pg_sys::PageGetContents(page) as *mut u8;
+        let header = page as *const pg_sys::PageHeaderData;
+        let page_data = (header as *const u8).add(size_of::<pg_sys::PageHeaderData>()) as *mut u8;
         let mut offset = 0usize;
 
         // Write centroids to this page
@@ -101,7 +104,8 @@ pub unsafe fn read_centroids(
         pg_sys::LockBuffer(buffer, pg_sys::BUFFER_LOCK_SHARE as i32);
 
         let page = pg_sys::BufferGetPage(buffer);
-        let page_data = pg_sys::PageGetContents(page) as *const u8;
+        let header = page as *const pg_sys::PageHeaderData;
+        let page_data = (header as *const u8).add(size_of::<pg_sys::PageHeaderData>());
         let mut offset = 0usize;
 
         // Read centroids from this page
@@ -147,15 +151,16 @@ pub unsafe fn write_inverted_list(
         return 0;
     }
 
-    let buffer = pg_sys::ReadBuffer(index, pg_sys::P_NEW);
+    let buffer = pg_sys::ReadBuffer(index, P_NEW_BLOCK);
     let page_num = pg_sys::BufferGetBlockNumber(buffer);
 
     pg_sys::LockBuffer(buffer, pg_sys::BUFFER_LOCK_EXCLUSIVE as i32);
 
     let page = pg_sys::BufferGetPage(buffer);
-    pg_sys::PageInit(page, pg_sys::BLCKSZ as usize, 0);
+    pg_sys::PageInit(page, pg_sys::BLCKSZ as pg_sys::Size, 0);
 
-    let page_data = pg_sys::PageGetContents(page) as *mut u8;
+    let header = page as *const pg_sys::PageHeaderData;
+    let page_data = (header as *const u8).add(size_of::<pg_sys::PageHeaderData>()) as *mut u8;
     let mut offset = 0usize;
     let dimensions = list[0].1.len();
 
@@ -166,7 +171,7 @@ pub unsafe fn write_inverted_list(
 
         // Write TID
         ptr::write(page_data.add(offset) as *mut pg_sys::ItemPointerData, *tid);
-        offset += std::mem::size_of::<pg_sys::ItemPointerData>();
+        offset += size_of::<pg_sys::ItemPointerData>();
 
         // Write vector
         let vector_ptr = page_data.add(offset) as *mut f32;
@@ -196,13 +201,15 @@ pub unsafe fn read_inverted_list(
     pg_sys::LockBuffer(buffer, pg_sys::BUFFER_LOCK_SHARE as i32);
 
     let page = pg_sys::BufferGetPage(buffer);
-    let page_data = pg_sys::PageGetContents(page) as *const u8;
+    let header = page as *const pg_sys::PageHeaderData;
+    let page_data = (header as *const u8).add(size_of::<pg_sys::PageHeaderData>());
     let mut offset = 0usize;
     let mut entries = Vec::new();
 
     // Calculate available space
-    let entry_size = std::mem::size_of::<pg_sys::ItemPointerData>() + dimensions * 4;
-    let available_space = pg_sys::BLCKSZ as usize - pg_sys::MAXALIGN(pg_sys::SizeOfPageHeaderData);
+    let entry_size = size_of::<pg_sys::ItemPointerData>() + dimensions * 4;
+    let page_header_size = size_of::<pg_sys::PageHeaderData>();
+    let available_space = pg_sys::BLCKSZ as usize - page_header_size;
     let max_entries = available_space / entry_size;
 
     // Read entries
@@ -213,7 +220,7 @@ pub unsafe fn read_inverted_list(
 
         // Read TID
         let tid = ptr::read(page_data.add(offset) as *const pg_sys::ItemPointerData);
-        offset += std::mem::size_of::<pg_sys::ItemPointerData>();
+        offset += size_of::<pg_sys::ItemPointerData>();
 
         // Check if this is a valid entry (block number > 0)
         if tid.ip_blkid.bi_hi == 0 && tid.ip_blkid.bi_lo == 0 {
@@ -245,9 +252,9 @@ pub unsafe fn extract_vector_from_tuple(
     let mut is_null = false;
     let datum = pg_sys::heap_getattr(
         tuple,
-        attno,
+        attno as i32,
         tuple_desc,
-        &mut is_null as *mut bool,
+        &mut is_null,
     );
 
     if is_null {
@@ -266,10 +273,18 @@ unsafe fn extract_vector_from_datum(datum: pg_sys::Datum) -> Option<Vec<f32>> {
     }
 
     // Detoast if needed
-    let varlena = pg_sys::pg_detoast_datum_packed(datum as *mut pg_sys::varlena);
+    let varlena = pg_sys::pg_detoast_datum_packed(datum.cast_mut_ptr());
 
-    // Get data pointer
-    let data_ptr = pg_sys::VARDATA_ANY(varlena) as *const u8;
+    // Get data pointer - access varlena data manually
+    // varlena header is 4 bytes, data follows
+    let varlena_ptr = varlena as *const u8;
+
+    // Read the varlena length (first 4 bytes, lower 30 bits)
+    let header = ptr::read(varlena_ptr as *const u32);
+    let _data_size = (header >> 2) as usize;
+
+    // Data starts after the 4-byte header
+    let data_ptr = varlena_ptr.add(4);
 
     // First 4 bytes are dimension count
     let dimensions = ptr::read(data_ptr as *const u32) as usize;
@@ -285,12 +300,15 @@ unsafe fn extract_vector_from_datum(datum: pg_sys::Datum) -> Option<Vec<f32>> {
 pub unsafe fn create_vector_datum(vector: &[f32]) -> pg_sys::Datum {
     let dimensions = vector.len() as u32;
     let data_size = 4 + (dimensions as usize * 4);
-    let total_size = pg_sys::VARHDRSZ + data_size;
+    let total_size = 4 + data_size; // 4 byte varlena header + data
 
-    let varlena = pg_sys::palloc(total_size) as *mut pg_sys::varlena;
-    pg_sys::SET_VARSIZE(varlena, total_size as i32);
+    let varlena = pg_sys::palloc(total_size) as *mut u8;
 
-    let data_ptr = pg_sys::VARDATA(varlena) as *mut u8;
+    // Set varlena header (size << 2)
+    let header = (total_size as u32) << 2;
+    ptr::write(varlena as *mut u32, header);
+
+    let data_ptr = varlena.add(4);
 
     // Write dimensions
     ptr::write(data_ptr as *mut u32, dimensions);
@@ -316,9 +334,9 @@ pub type HeapScanCallback = unsafe extern "C" fn(
 
 /// Scan heap relation and collect vectors
 pub unsafe fn scan_heap_for_vectors(
-    heap: pg_sys::Relation,
-    index_info: *mut pg_sys::IndexInfo,
-    callback: impl Fn(pg_sys::ItemPointerData, Vec<f32>),
+    _heap: pg_sys::Relation,
+    _index_info: *mut pg_sys::IndexInfo,
+    _callback: impl Fn(pg_sys::ItemPointerData, Vec<f32>),
 ) {
     // This is a simplified version
     // Real implementation would use table_beginscan_catalog or similar

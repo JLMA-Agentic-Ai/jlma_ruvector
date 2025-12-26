@@ -5,11 +5,29 @@ category: platform
 version: 1.0.0
 author: Flow Nexus
 tags: [authentication, sandboxes, deployment, payments, gamification, cloud]
+hooks:
+  pre: |
+    echo "🧠 Flow Nexus Platform activated"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js pre-edit "$FILE" 2>/dev/null || true
+    fi
+  post: |
+    echo "✅ Flow Nexus Platform complete"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js post-edit "$FILE" "true" 2>/dev/null || true
+    fi
 ---
 
 # Flow Nexus Platform Management
 
 Comprehensive platform management for Flow Nexus - covering authentication, sandbox execution, app deployment, credit management, and coding challenges.
+
+## Self-Learning Intelligence
+
+Integrates with RuVector's Q-learning and vector memory for improved performance.
+CLI: `node .claude/intelligence/cli.js stats`
 
 ## Table of Contents
 1. [Authentication & User Management](#authentication--user-management)

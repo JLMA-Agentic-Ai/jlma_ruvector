@@ -1,8 +1,11 @@
 //! pgrx integration tests for distance functions and operators
 //!
 //! These tests run inside a PostgreSQL instance and test the full SQL interface
+//!
+//! Run with: `cargo pgrx test`
 
-#[cfg(any(test, feature = "pg_test"))]
+#![cfg(feature = "pg_test")]
+
 #[pgrx::pg_schema]
 mod integration_tests {
     use pgrx::prelude::*;

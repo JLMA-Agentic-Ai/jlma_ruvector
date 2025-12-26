@@ -15,13 +15,13 @@ mod learning_tests {
         // 2. Record some query trajectories
         let tracker = LEARNING_MANAGER.get_tracker("test_e2e").unwrap();
 
-        for i in 0..50 {
+        for i in 0u64..50 {
             let trajectory = QueryTrajectory::new(
                 vec![i as f32 / 10.0, (i % 10) as f32],
                 vec![i, i + 1],
                 1000 + i * 10,
-                50 + (i % 3) * 10,
-                10 + (i % 2) * 5,
+                (50 + (i % 3) * 10) as usize,
+                (10 + (i % 2) * 5) as usize,
             );
             tracker.record(trajectory);
         }

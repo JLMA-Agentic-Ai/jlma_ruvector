@@ -1,6 +1,13 @@
 # RuVector-Postgres
 
-**The most advanced PostgreSQL vector database extension.** A high-performance, drop-in replacement for pgvector with 53+ SQL functions, SIMD acceleration, 39 attention mechanisms, Graph Neural Networks, hyperbolic embeddings, and self-learning capabilities.
+**The most advanced PostgreSQL vector database extension.** A high-performance, drop-in replacement for pgvector with 77+ SQL functions, SIMD acceleration, 39 attention mechanisms, Graph Neural Networks, hyperbolic embeddings, and self-learning capabilities.
+
+## v2.0.0 (December 2025)
+
+- **IVFFlat Index**: Full inverted list storage with proper page management
+- **HNSW Index**: Fixed query execution with heap scan integration
+- **Security Audit**: 3 critical SQL injection vulnerabilities fixed
+- **Multi-tenant**: Validated tenant isolation with parameterized queries
 
 ## Quick Start
 

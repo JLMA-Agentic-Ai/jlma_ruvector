@@ -22,6 +22,11 @@ pub mod routing;
 pub mod learning;
 pub mod graph;
 pub mod hyperbolic;
+pub mod integrity;
+pub mod hybrid;
+pub mod tenancy;
+pub mod workers;
+pub mod healing;
 
 // Optional: Local embedding generation (requires 'embeddings' feature)
 #[cfg(feature = "embeddings")]
@@ -49,6 +54,11 @@ pub const DEFAULT_IVFFLAT_PROBES: usize = 1;
 // GUC variables
 static EF_SEARCH: GucSetting<i32> = GucSetting::<i32>::new(DEFAULT_HNSW_EF_SEARCH as i32);
 static PROBES: GucSetting<i32> = GucSetting::<i32>::new(DEFAULT_IVFFLAT_PROBES as i32);
+
+// Hybrid search GUC variables
+static HYBRID_ALPHA: GucSetting<f64> = GucSetting::<f64>::new(0.5);
+static HYBRID_RRF_K: GucSetting<i32> = GucSetting::<i32>::new(60);
+static HYBRID_PREFETCH_K: GucSetting<i32> = GucSetting::<i32>::new(100);
 
 // ============================================================================
 // Extension Initialization
@@ -82,6 +92,43 @@ pub extern "C" fn _PG_init() {
         GucContext::Userset,
         GucFlags::default(),
     );
+
+    // Hybrid search GUCs
+    GucRegistry::define_float_guc(
+        "ruvector.hybrid_alpha",
+        "Default alpha for hybrid linear fusion (0=keyword only, 1=vector only)",
+        "Controls the blend between vector and keyword search",
+        &HYBRID_ALPHA,
+        0.0,
+        1.0,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
+
+    GucRegistry::define_int_guc(
+        "ruvector.hybrid_rrf_k",
+        "RRF constant for hybrid search (default 60)",
+        "Lower values give more weight to top-ranked results",
+        &HYBRID_RRF_K,
+        1,
+        1000,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
+
+    GucRegistry::define_int_guc(
+        "ruvector.hybrid_prefetch_k",
+        "Number of results to prefetch from each branch",
+        "Higher values improve recall but increase latency",
+        &HYBRID_PREFETCH_K,
+        1,
+        10000,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
+
+    // Initialize tenant GUCs for multi-tenancy
+    tenancy::init_tenant_gucs();
 
     // Log initialization
     pgrx::log!(

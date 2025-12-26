@@ -1,16 +1,43 @@
 //! Index implementations for vector similarity search
 //!
 //! Provides HNSW and IVFFlat index types compatible with pgvector.
-//! Note: Full PostgreSQL Access Method integration is in progress.
+//!
+//! ## Index Types
+//!
+//! - **HNSW**: Hierarchical Navigable Small World graphs for fast ANN search
+//! - **IVFFlat**: Inverted File with Flat quantization for scalable search
+//!
+//! ## Access Methods (PostgreSQL Integration)
+//!
+//! - `ruhnsw`: HNSW index access method
+//! - `ruivfflat`: IVFFlat index access method (v2 with quantization support)
+//!
+//! ## SQL Usage
+//!
+//! ```sql
+//! -- Create HNSW index
+//! CREATE INDEX idx ON items USING ruhnsw (embedding vector_l2_ops)
+//!     WITH (m=16, ef_construction=64);
+//!
+//! -- Create IVFFlat index with quantization
+//! CREATE INDEX idx ON items USING ruivfflat (embedding vector_l2_ops)
+//!     WITH (lists=100, quantization='sq8');
+//!
+//! -- Runtime configuration
+//! SET ruvector.ivfflat_probes = 10;
+//! SELECT ruivfflat_set_adaptive_probes(true);
+//! ```
 
 mod hnsw;
 mod ivfflat;
 mod scan;
 
-// Access Method implementations
+// Access Method implementations (PostgreSQL Index AM)
 mod hnsw_am;
-// mod ivfflat_am;  // Enable after hnsw_am is fixed
-// mod ivfflat_storage;
+mod ivfflat_am;
+mod ivfflat_storage;
+
+// Parallel execution support
 // pub mod parallel;
 // pub mod bgworker;
 // pub mod parallel_ops;

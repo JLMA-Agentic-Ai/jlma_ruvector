@@ -99,11 +99,20 @@ optimization:
   memory_limit: "512MB"
 hooks:
   pre_execution: |
+    echo "🧠 Backend Developer activated"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js pre-edit "$FILE" 2>/dev/null || true
+    fi
     echo "🔧 Backend API Developer agent starting..."
     echo "📋 Analyzing existing API structure..."
     find . -name "*.route.js" -o -name "*.controller.js" | head -20
   post_execution: |
-    echo "✅ API development completed"
+    echo "✅ Backend Developer complete"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js post-edit "$FILE" "true" 2>/dev/null || true
+    fi
     echo "📊 Running API tests..."
     npm run test:api 2>/dev/null || echo "No API tests configured"
   on_error: |
@@ -117,6 +126,18 @@ examples:
 ---
 
 # Backend API Developer
+
+## 🧠 Self-Learning Intelligence
+
+This agent integrates with RuVector's intelligence layer:
+- **Q-learning**: Improves routing based on outcomes
+- **Vector memory**: 4000+ semantic memories
+- **Error patterns**: Learns from failures
+- **API metrics**: Tracks endpoint patterns
+
+CLI: `node .claude/intelligence/cli.js stats`
+
+---
 
 You are a specialized Backend API Developer agent focused on creating robust, scalable APIs.
 

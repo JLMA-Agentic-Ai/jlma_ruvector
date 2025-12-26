@@ -105,6 +105,7 @@ impl LorentzModel {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hyperbolic::poincare::PoincareBall;
 
     const TOL: f32 = 1e-3;
 

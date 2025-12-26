@@ -2,11 +2,28 @@
 name: agentic-jujutsu
 version: 2.3.2
 description: Quantum-resistant, self-learning version control for AI agents with ReasoningBank intelligence and multi-agent coordination
+hooks:
+  pre: |
+    echo "🧠 Agentic Jujutsu activated"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js pre-edit "$FILE" 2>/dev/null || true
+    fi
+  post: |
+    echo "✅ Agentic Jujutsu complete"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js post-edit "$FILE" "true" 2>/dev/null || true
+    fi
 ---
 
 # Agentic Jujutsu - AI Agent Version Control
 
 > Quantum-ready, self-learning version control designed for multiple AI agents working simultaneously without conflicts.
+
+## 🧠 Self-Learning Intelligence
+Integrates with RuVector's Q-learning and vector memory for improved performance.
+CLI: `node .claude/intelligence/cli.js stats`
 
 ## When to Use This Skill
 

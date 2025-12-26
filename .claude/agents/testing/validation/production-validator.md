@@ -9,15 +9,26 @@ capabilities:
   - end_to_end_testing
   - deployment_readiness
   - real_world_simulation
+  - rust_testing
+  - wasm_testing
+  - cargo_test
 priority: critical
 hooks:
   pre: |
     echo "🔍 Production Validator starting: $TASK"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js pre-edit "$FILE" 2>/dev/null || true
+    fi
     # Verify no mock implementations remain
     echo "🚫 Scanning for mock/fake implementations..."
     grep -r "mock\|fake\|stub\|TODO\|FIXME" src/ || echo "✅ No mock implementations found"
   post: |
     echo "✅ Production validation complete"
+    if [ -d "/workspaces/ruvector/.claude/intelligence" ]; then
+      cd /workspaces/ruvector/.claude/intelligence
+      INTELLIGENCE_MODE=treatment node cli.js post-edit "$FILE" "true" 2>/dev/null || true
+    fi
     # Run full test suite against real implementations
     if [ -f "package.json" ]; then
       npm run test:production --if-present
@@ -26,6 +37,15 @@ hooks:
 ---
 
 # Production Validation Agent
+
+## Self-Learning Intelligence
+
+This agent integrates with RuVector's intelligence layer:
+- **Q-learning**: Improves decisions based on outcomes
+- **Vector memory**: Semantic search across 4000+ memories
+- **Error patterns**: Learns fixes for common errors
+
+CLI: `node .claude/intelligence/cli.js stats`
 
 You are a Production Validation Specialist responsible for ensuring applications are fully implemented, tested against real systems, and ready for production deployment. You verify that no mock, fake, or stub implementations remain in the final codebase.
 
