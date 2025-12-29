@@ -506,7 +506,7 @@ function generateClaudeHooksConfig(): object {
 program
   .name('ruvector')
   .description('RuVector CLI - High-performance vector database')
-  .version('0.1.25');
+  .version('0.1.27');
 
 const hooks = program.command('hooks').description('Self-learning intelligence hooks for Claude Code');
 
@@ -972,6 +972,204 @@ hooks.command('swarm-stats')
       average_success_rate: stats.avgSuccess,
       topology: 'mesh'
     }, null, 2));
+  });
+
+// ============================================================================
+// Claude Code v2.0.55+ Features
+// ============================================================================
+
+hooks.command('lsp-diagnostic')
+  .description('Process LSP diagnostic events (Claude Code 2.0.55+)')
+  .option('--file <path>', 'File with diagnostic')
+  .option('--severity <level>', 'Diagnostic severity (error, warning, info, hint)')
+  .option('--message <text>', 'Diagnostic message')
+  .action((opts: { file?: string; severity?: string; message?: string }) => {
+    const intel = new Intelligence();
+
+    // Read hook input from stdin if available
+    let stdinData: any = null;
+    try {
+      const inputPath = process.env.CLAUDE_HOOK_INPUT;
+      if (inputPath && fs.existsSync(inputPath)) {
+        stdinData = JSON.parse(fs.readFileSync(inputPath, 'utf-8'));
+      }
+    } catch { /* ignore */ }
+
+    const file = opts.file || stdinData?.tool_input?.file || 'unknown';
+    const severity = opts.severity || stdinData?.tool_input?.severity || 'info';
+    const message = opts.message || stdinData?.tool_input?.message || '';
+
+    // Learn from LSP diagnostics
+    if (severity === 'error' || severity === 'warning') {
+      // Record error and get codes
+      const codes = intel.recordError(`lsp:${file}`, message);
+      const errorCode = codes[0] || `${severity}-unknown`;
+
+      // Record trajectory for learning
+      const state = `lsp_${severity}_${path.extname(file).slice(1) || 'unknown'}`;
+      intel.learn(state, 'diagnostic', message.slice(0, 100), severity === 'error' ? -0.5 : -0.2);
+      intel.save();
+
+      // Output context for Claude
+      const fixInfo = intel.suggestFix(errorCode);
+      const learnedFixes = fixInfo?.fixes ?? [];
+      console.log(JSON.stringify({
+        file,
+        severity,
+        error_code: errorCode,
+        learned_fixes: learnedFixes.slice(0, 3),
+        recommendation: learnedFixes.length > 0 ? 'Apply learned fix' : 'Investigate error pattern'
+      }));
+    } else {
+      console.log(JSON.stringify({ file, severity, message, action: 'logged' }));
+    }
+  });
+
+hooks.command('suggest-ultrathink')
+  .description('Recommend ultrathink mode for complex tasks (Claude Code 2.0.55+)')
+  .argument('<task...>', 'Task description')
+  .option('--file <path>', 'File being worked on')
+  .action((task: string[], opts: { file?: string }) => {
+    const intel = new Intelligence();
+    const taskStr = task.join(' ').toLowerCase();
+    const file = opts.file;
+
+    // Complexity patterns that suggest ultrathink mode
+    const complexityPatterns: Array<[string, number]> = [
+      ['algorithm', 0.8], ['optimize', 0.7], ['refactor', 0.6],
+      ['debug', 0.7], ['performance', 0.7], ['concurrent', 0.8],
+      ['async', 0.6], ['architecture', 0.8], ['security', 0.7],
+      ['cryptograph', 0.9], ['distributed', 0.8], ['consensus', 0.9],
+      ['neural', 0.8], ['ml', 0.7], ['complex', 0.6],
+      ['migrate', 0.7], ['integration', 0.6], ['api design', 0.7],
+      ['database schema', 0.7], ['state machine', 0.8], ['parser', 0.8],
+      ['compiler', 0.9], ['memory management', 0.8], ['thread', 0.7],
+    ];
+
+    let complexityScore = 0;
+    const triggers: string[] = [];
+
+    for (const [pattern, weight] of complexityPatterns) {
+      if (taskStr.includes(pattern)) {
+        complexityScore = Math.max(complexityScore, weight);
+        triggers.push(pattern);
+      }
+    }
+
+    // Check file extension complexity
+    if (file) {
+      const ext = path.extname(file).slice(1);
+      const complexExts: Record<string, number> = {
+        rs: 0.5, cpp: 0.5, c: 0.4, zig: 0.5,
+        asm: 0.7, wasm: 0.6, sql: 0.4
+      };
+      if (complexExts[ext]) {
+        complexityScore = Math.max(complexityScore, complexExts[ext]);
+        triggers.push(`${ext} file`);
+      }
+    }
+
+    // Check learned patterns
+    const state = `ultrathink_${triggers[0] || 'general'}`;
+    const suggested = intel.suggest(state, ['enable', 'skip']);
+
+    const recommendUltrathink = complexityScore >= 0.6;
+
+    // Record trajectory for learning
+    intel.learn(state, recommendUltrathink ? 'enable' : 'skip', taskStr.slice(0, 100), 0);
+
+    // Build output
+    const output: Record<string, unknown> = {
+      task: task.join(' '),
+      complexity_score: complexityScore,
+      triggers,
+      recommend_ultrathink: recommendUltrathink,
+      learned_preference: suggested
+    };
+
+    if (recommendUltrathink) {
+      output.message = '🧠 Complex task detected - ultrathink mode recommended';
+      output.reasoning_depth = complexityScore >= 0.8 ? 'deep' : 'moderate';
+    } else {
+      output.message = 'Standard processing sufficient';
+    }
+
+    intel.save();
+    console.log(JSON.stringify(output, null, 2));
+  });
+
+hooks.command('async-agent')
+  .description('Coordinate async sub-agent execution (Claude Code 2.0.55+)')
+  .option('--action <type>', 'Action: spawn, sync, complete', 'spawn')
+  .option('--agent-id <id>', 'Agent identifier')
+  .option('--task <description>', 'Task description (for spawn)')
+  .action((opts: { action: string; agentId?: string; task?: string }) => {
+    const intel = new Intelligence();
+    const action = opts.action;
+    const agentId = opts.agentId || `async-${Date.now()}`;
+    const task = opts.task || '';
+
+    switch (action) {
+      case 'spawn': {
+        // Register async agent
+        intel.swarmRegister(agentId, 'async-subagent', ['parallel', 'autonomous']);
+
+        // Record spawn event
+        const state = `async_spawn_${task.split(' ')[0] || 'general'}`;
+        intel.learn(state, 'spawn', task.slice(0, 100), 0.1);
+
+        // Get learned patterns for similar tasks
+        const suggested = intel.suggest(state, ['coder', 'researcher', 'tester', 'reviewer']);
+
+        intel.save();
+        console.log(JSON.stringify({
+          action: 'spawned',
+          agent_id: agentId,
+          task,
+          suggested_type: suggested.action,
+          status: 'running',
+          async: true
+        }));
+        break;
+      }
+
+      case 'sync': {
+        // Check agent status and coordinate
+        const stats = intel.swarmStats();
+        console.log(JSON.stringify({
+          action: 'sync',
+          agent_id: agentId,
+          swarm_agents: stats.agents,
+          status: 'synchronized',
+          pending_results: 0
+        }));
+        break;
+      }
+
+      case 'complete': {
+        // Mark agent complete and record success
+        const state = `async_complete_${agentId}`;
+        intel.learn(state, 'complete', task.slice(0, 100), 1.0);
+
+        // Update agent status
+        intel.swarmHeal(agentId); // Resets/removes the agent
+
+        intel.save();
+        console.log(JSON.stringify({
+          action: 'completed',
+          agent_id: agentId,
+          status: 'success',
+          learning_recorded: true
+        }));
+        break;
+      }
+
+      default:
+        console.log(JSON.stringify({
+          error: `Unknown action: ${action}`,
+          valid_actions: ['spawn', 'sync', 'complete']
+        }));
+    }
   });
 
 program.parse();
