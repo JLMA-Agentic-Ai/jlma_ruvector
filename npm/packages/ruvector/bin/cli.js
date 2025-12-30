@@ -2267,6 +2267,40 @@ class Intelligence {
 // Hooks command group
 const hooksCmd = program.command('hooks').description('Self-learning intelligence hooks for Claude Code');
 
+// Helper: Detect project type
+function detectProjectType() {
+  const cwd = process.cwd();
+  const types = [];
+  if (fs.existsSync(path.join(cwd, 'Cargo.toml'))) types.push('rust');
+  if (fs.existsSync(path.join(cwd, 'package.json'))) types.push('node');
+  if (fs.existsSync(path.join(cwd, 'requirements.txt')) || fs.existsSync(path.join(cwd, 'pyproject.toml'))) types.push('python');
+  if (fs.existsSync(path.join(cwd, 'go.mod'))) types.push('go');
+  if (fs.existsSync(path.join(cwd, 'Gemfile'))) types.push('ruby');
+  if (fs.existsSync(path.join(cwd, 'pom.xml')) || fs.existsSync(path.join(cwd, 'build.gradle'))) types.push('java');
+  return types.length > 0 ? types : ['generic'];
+}
+
+// Helper: Get permissions for project type
+function getPermissionsForProjectType(types) {
+  const basePermissions = [
+    'Bash(git status)', 'Bash(git diff:*)', 'Bash(git log:*)', 'Bash(git add:*)',
+    'Bash(git commit:*)', 'Bash(git push)', 'Bash(git branch:*)', 'Bash(git checkout:*)',
+    'Bash(ls:*)', 'Bash(pwd)', 'Bash(cat:*)', 'Bash(mkdir:*)', 'Bash(which:*)', 'Bash(ruvector:*)'
+  ];
+  const typePermissions = {
+    rust: ['Bash(cargo:*)', 'Bash(rustc:*)', 'Bash(rustfmt:*)', 'Bash(clippy:*)', 'Bash(wasm-pack:*)'],
+    node: ['Bash(npm:*)', 'Bash(npx:*)', 'Bash(node:*)', 'Bash(yarn:*)', 'Bash(pnpm:*)'],
+    python: ['Bash(python:*)', 'Bash(pip:*)', 'Bash(pytest:*)', 'Bash(poetry:*)', 'Bash(uv:*)'],
+    go: ['Bash(go:*)', 'Bash(gofmt:*)'],
+    ruby: ['Bash(ruby:*)', 'Bash(gem:*)', 'Bash(bundle:*)', 'Bash(rails:*)'],
+    java: ['Bash(mvn:*)', 'Bash(gradle:*)', 'Bash(java:*)', 'Bash(javac:*)'],
+    generic: ['Bash(make:*)']
+  };
+  let perms = [...basePermissions];
+  types.forEach(t => { if (typePermissions[t]) perms = perms.concat(typePermissions[t]); });
+  return [...new Set(perms)];
+}
+
 hooksCmd.command('init')
   .description('Initialize hooks in current project')
   .option('--force', 'Force overwrite existing settings')
@@ -2274,6 +2308,9 @@ hooksCmd.command('init')
   .option('--no-claude-md', 'Skip CLAUDE.md creation')
   .option('--no-permissions', 'Skip permissions configuration')
   .option('--no-env', 'Skip environment variables')
+  .option('--no-gitignore', 'Skip .gitignore update')
+  .option('--no-mcp', 'Skip MCP server configuration')
+  .option('--no-statusline', 'Skip statusLine configuration')
   .action((opts) => {
   const settingsPath = path.join(process.cwd(), '.claude', 'settings.json');
   const settingsDir = path.dirname(settingsPath);
@@ -2294,6 +2331,10 @@ hooksCmd.command('init')
     if (settings.hooks.End) { delete settings.hooks.End; }
   }
 
+  // Detect project type
+  const projectTypes = detectProjectType();
+  console.log(chalk.blue(`  ✓ Detected project type(s): ${projectTypes.join(', ')}`));
+
   // Environment variables for intelligence (unless --minimal or --no-env)
   if (!opts.minimal && opts.env !== false) {
     settings.env = settings.env || {};
@@ -2304,36 +2345,56 @@ hooksCmd.command('init')
     console.log(chalk.blue('  ✓ Environment variables configured'));
   }
 
-  // Permissions (unless --minimal or --no-permissions)
+  // Permissions based on detected project type (unless --minimal or --no-permissions)
   if (!opts.minimal && opts.permissions !== false) {
     settings.permissions = settings.permissions || {};
-    settings.permissions.allow = settings.permissions.allow || [
-      'Bash(npm run:*)',
-      'Bash(npm test:*)',
-      'Bash(npm install:*)',
-      'Bash(npx:*)',
-      'Bash(git status)',
-      'Bash(git diff:*)',
-      'Bash(git log:*)',
-      'Bash(git add:*)',
-      'Bash(git commit:*)',
-      'Bash(git push)',
-      'Bash(git branch:*)',
-      'Bash(git checkout:*)',
-      'Bash(ls:*)',
-      'Bash(pwd)',
-      'Bash(cat:*)',
-      'Bash(mkdir:*)',
-      'Bash(which:*)',
-      'Bash(node:*)',
-      'Bash(ruvector:*)'
-    ];
+    settings.permissions.allow = settings.permissions.allow || getPermissionsForProjectType(projectTypes);
     settings.permissions.deny = settings.permissions.deny || [
       'Bash(rm -rf /)',
       'Bash(sudo rm:*)',
-      'Bash(chmod 777:*)'
+      'Bash(chmod 777:*)',
+      'Bash(:(){ :|:& };:)'
     ];
-    console.log(chalk.blue('  ✓ Permissions configured'));
+    console.log(chalk.blue('  ✓ Permissions configured (project-specific)'));
+  }
+
+  // MCP server configuration (unless --minimal or --no-mcp)
+  if (!opts.minimal && opts.mcp !== false) {
+    settings.mcpServers = settings.mcpServers || {};
+    // Only add if not already configured
+    if (!settings.mcpServers['claude-flow'] && !settings.enabledMcpjsonServers?.includes('claude-flow')) {
+      settings.enabledMcpjsonServers = settings.enabledMcpjsonServers || [];
+      if (!settings.enabledMcpjsonServers.includes('claude-flow')) {
+        settings.enabledMcpjsonServers.push('claude-flow');
+      }
+    }
+    console.log(chalk.blue('  ✓ MCP servers configured'));
+  }
+
+  // StatusLine configuration (unless --minimal or --no-statusline)
+  if (!opts.minimal && opts.statusline !== false) {
+    if (!settings.statusLine) {
+      // Create a simple statusline script
+      const statuslineScript = path.join(settingsDir, 'statusline.sh');
+      const statuslineContent = `#!/bin/bash
+# RuVector Status Line - shows intelligence stats
+INTEL_FILE=".ruvector/intelligence.json"
+if [ -f "$INTEL_FILE" ]; then
+  PATTERNS=$(jq -r '.patterns | length // 0' "$INTEL_FILE" 2>/dev/null || echo "0")
+  MEMORIES=$(jq -r '.memories | length // 0' "$INTEL_FILE" 2>/dev/null || echo "0")
+  echo "🧠 $PATTERNS patterns | 💾 $MEMORIES memories"
+else
+  echo "🧠 RuVector"
+fi
+`;
+      fs.writeFileSync(statuslineScript, statuslineContent);
+      fs.chmodSync(statuslineScript, '755');
+      settings.statusLine = {
+        type: 'command',
+        command: '.claude/statusline.sh'
+      };
+      console.log(chalk.blue('  ✓ StatusLine configured'));
+    }
   }
 
   // Core hooks (always included)
@@ -2486,6 +2547,32 @@ npx ruvector hooks init --force      # Overwrite existing
   } else if (fs.existsSync(claudeMdPath) && !opts.force) {
     console.log(chalk.yellow('ℹ️  CLAUDE.md already exists (use --force to overwrite)'));
   }
+
+  // Update .gitignore (unless --no-gitignore)
+  if (opts.gitignore !== false) {
+    const gitignorePath = path.join(process.cwd(), '.gitignore');
+    const entriesToAdd = ['.ruvector/', '.claude/statusline.sh'];
+    let gitignoreContent = '';
+    if (fs.existsSync(gitignorePath)) {
+      gitignoreContent = fs.readFileSync(gitignorePath, 'utf-8');
+    }
+    const linesToAdd = entriesToAdd.filter(entry => !gitignoreContent.includes(entry));
+    if (linesToAdd.length > 0) {
+      const newContent = gitignoreContent.trim() + '\n\n# RuVector intelligence data\n' + linesToAdd.join('\n') + '\n';
+      fs.writeFileSync(gitignorePath, newContent);
+      console.log(chalk.blue('  ✓ .gitignore updated'));
+    }
+  }
+
+  // Create .ruvector directory for intelligence data
+  const ruvectorDir = path.join(process.cwd(), '.ruvector');
+  if (!fs.existsSync(ruvectorDir)) {
+    fs.mkdirSync(ruvectorDir, { recursive: true });
+    console.log(chalk.blue('  ✓ .ruvector/ directory created'));
+  }
+
+  console.log(chalk.green('\n✅ RuVector hooks initialization complete!'));
+  console.log(chalk.dim('   Run `npx ruvector hooks verify` to test the setup'));
 });
 
 hooksCmd.command('stats').description('Show intelligence statistics').action(() => {
@@ -2621,5 +2708,292 @@ hooksCmd.command('lsp-diagnostic').description('LSP diagnostic hook').option('--
 hooksCmd.command('track-notification').description('Track notification').action(() => {
   console.log(JSON.stringify({ tracked: true }));
 });
+
+// Verify hooks are working
+hooksCmd.command('verify')
+  .description('Verify hooks are working correctly')
+  .option('--verbose', 'Show detailed output')
+  .action((opts) => {
+    console.log(chalk.bold.cyan('\n🔍 RuVector Hooks Verification\n'));
+    const checks = [];
+
+    // Check 1: Settings file exists
+    const settingsPath = path.join(process.cwd(), '.claude', 'settings.json');
+    if (fs.existsSync(settingsPath)) {
+      checks.push({ name: 'Settings file', status: 'pass', detail: '.claude/settings.json exists' });
+      try {
+        const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+        // Check hooks
+        const requiredHooks = ['PreToolUse', 'PostToolUse', 'SessionStart', 'Stop'];
+        const missingHooks = requiredHooks.filter(h => !settings.hooks?.[h]);
+        if (missingHooks.length === 0) {
+          checks.push({ name: 'Required hooks', status: 'pass', detail: 'All core hooks configured' });
+        } else {
+          checks.push({ name: 'Required hooks', status: 'fail', detail: `Missing: ${missingHooks.join(', ')}` });
+        }
+        // Check advanced hooks
+        const advancedHooks = ['UserPromptSubmit', 'PreCompact', 'Notification'];
+        const hasAdvanced = advancedHooks.filter(h => settings.hooks?.[h]);
+        if (hasAdvanced.length > 0) {
+          checks.push({ name: 'Advanced hooks', status: 'pass', detail: `${hasAdvanced.length}/3 configured` });
+        } else {
+          checks.push({ name: 'Advanced hooks', status: 'warn', detail: 'None configured (optional)' });
+        }
+        // Check env
+        if (settings.env?.RUVECTOR_INTELLIGENCE_ENABLED) {
+          checks.push({ name: 'Environment vars', status: 'pass', detail: 'Intelligence enabled' });
+        } else {
+          checks.push({ name: 'Environment vars', status: 'warn', detail: 'Not configured' });
+        }
+        // Check permissions
+        if (settings.permissions?.allow?.length > 0) {
+          checks.push({ name: 'Permissions', status: 'pass', detail: `${settings.permissions.allow.length} allowed patterns` });
+        } else {
+          checks.push({ name: 'Permissions', status: 'warn', detail: 'Not configured' });
+        }
+      } catch (e) {
+        checks.push({ name: 'Settings parse', status: 'fail', detail: 'Invalid JSON' });
+      }
+    } else {
+      checks.push({ name: 'Settings file', status: 'fail', detail: 'Run `npx ruvector hooks init` first' });
+    }
+
+    // Check 2: .ruvector directory
+    const ruvectorDir = path.join(process.cwd(), '.ruvector');
+    if (fs.existsSync(ruvectorDir)) {
+      checks.push({ name: 'Data directory', status: 'pass', detail: '.ruvector/ exists' });
+      const intelFile = path.join(ruvectorDir, 'intelligence.json');
+      if (fs.existsSync(intelFile)) {
+        const stats = fs.statSync(intelFile);
+        checks.push({ name: 'Intelligence file', status: 'pass', detail: `${(stats.size / 1024).toFixed(1)}KB` });
+      } else {
+        checks.push({ name: 'Intelligence file', status: 'warn', detail: 'Will be created on first use' });
+      }
+    } else {
+      checks.push({ name: 'Data directory', status: 'warn', detail: 'Will be created on first use' });
+    }
+
+    // Check 3: Hook command execution
+    try {
+      const { execSync } = require('child_process');
+      execSync('npx ruvector hooks stats', { stdio: 'pipe', timeout: 5000 });
+      checks.push({ name: 'Command execution', status: 'pass', detail: 'Hooks commands work' });
+    } catch (e) {
+      checks.push({ name: 'Command execution', status: 'fail', detail: 'Commands failed to execute' });
+    }
+
+    // Display results
+    let passCount = 0, warnCount = 0, failCount = 0;
+    checks.forEach(c => {
+      const icon = c.status === 'pass' ? chalk.green('✓') : c.status === 'warn' ? chalk.yellow('⚠') : chalk.red('✗');
+      const statusColor = c.status === 'pass' ? chalk.green : c.status === 'warn' ? chalk.yellow : chalk.red;
+      console.log(`  ${icon} ${c.name}: ${statusColor(c.detail)}`);
+      if (c.status === 'pass') passCount++;
+      else if (c.status === 'warn') warnCount++;
+      else failCount++;
+    });
+
+    console.log('');
+    if (failCount === 0) {
+      console.log(chalk.green(`✅ Verification passed! ${passCount} checks passed, ${warnCount} warnings`));
+    } else {
+      console.log(chalk.red(`❌ Verification failed: ${failCount} issues found`));
+      console.log(chalk.dim('   Run `npx ruvector hooks doctor` for detailed diagnostics'));
+    }
+  });
+
+// Doctor - diagnose setup issues
+hooksCmd.command('doctor')
+  .description('Diagnose and fix setup issues')
+  .option('--fix', 'Automatically fix issues')
+  .action((opts) => {
+    console.log(chalk.bold.cyan('\n🩺 RuVector Hooks Doctor\n'));
+    const issues = [];
+    const fixes = [];
+
+    // Check settings file
+    const settingsPath = path.join(process.cwd(), '.claude', 'settings.json');
+    if (!fs.existsSync(settingsPath)) {
+      issues.push({ severity: 'error', message: 'No .claude/settings.json found', fix: 'Run `npx ruvector hooks init`' });
+    } else {
+      try {
+        const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+
+        // Check for invalid schema
+        if (settings.$schema && !settings.$schema.includes('schemastore.org')) {
+          issues.push({ severity: 'warning', message: 'Invalid schema URL', fix: 'Will be corrected' });
+          if (opts.fix) {
+            settings.$schema = 'https://json.schemastore.org/claude-code-settings.json';
+            fixes.push('Fixed schema URL');
+          }
+        }
+
+        // Check for old hook names
+        if (settings.hooks?.Start || settings.hooks?.End) {
+          issues.push({ severity: 'error', message: 'Invalid hook names (Start/End)', fix: 'Should be SessionStart/Stop' });
+          if (opts.fix) {
+            delete settings.hooks.Start;
+            delete settings.hooks.End;
+            fixes.push('Removed invalid hook names');
+          }
+        }
+
+        // Check hook format
+        const hookNames = ['PreToolUse', 'PostToolUse'];
+        hookNames.forEach(name => {
+          if (settings.hooks?.[name]) {
+            settings.hooks[name].forEach((hook, i) => {
+              if (typeof hook.matcher === 'object') {
+                issues.push({ severity: 'error', message: `${name}[${i}].matcher should be string, not object`, fix: 'Will be corrected' });
+              }
+            });
+          }
+        });
+
+        // Check for npx vs direct command
+        const checkCommands = (hooks) => {
+          if (!hooks) return;
+          hooks.forEach(h => {
+            h.hooks?.forEach(hh => {
+              if (hh.command && hh.command.includes('ruvector') && !hh.command.startsWith('npx ') && !hh.command.includes('/bin/')) {
+                issues.push({ severity: 'warning', message: `Command should use 'npx ruvector' for portability`, fix: 'Update to use npx' });
+              }
+            });
+          });
+        };
+        Object.values(settings.hooks || {}).forEach(checkCommands);
+
+        // Save fixes
+        if (opts.fix && fixes.length > 0) {
+          fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        }
+      } catch (e) {
+        issues.push({ severity: 'error', message: 'Invalid JSON in settings file', fix: 'Re-run `npx ruvector hooks init --force`' });
+      }
+    }
+
+    // Check .gitignore
+    const gitignorePath = path.join(process.cwd(), '.gitignore');
+    if (fs.existsSync(gitignorePath)) {
+      const content = fs.readFileSync(gitignorePath, 'utf-8');
+      if (!content.includes('.ruvector/')) {
+        issues.push({ severity: 'warning', message: '.ruvector/ not in .gitignore', fix: 'Add to prevent committing learning data' });
+        if (opts.fix) {
+          fs.appendFileSync(gitignorePath, '\n# RuVector intelligence data\n.ruvector/\n');
+          fixes.push('Added .ruvector/ to .gitignore');
+        }
+      }
+    }
+
+    // Display results
+    if (issues.length === 0) {
+      console.log(chalk.green('  ✓ No issues found! Your setup looks healthy.'));
+    } else {
+      issues.forEach(i => {
+        const icon = i.severity === 'error' ? chalk.red('✗') : chalk.yellow('⚠');
+        console.log(`  ${icon} ${i.message}`);
+        console.log(chalk.dim(`     Fix: ${i.fix}`));
+      });
+
+      if (opts.fix && fixes.length > 0) {
+        console.log(chalk.green(`\n✅ Applied ${fixes.length} fix(es):`));
+        fixes.forEach(f => console.log(chalk.green(`   • ${f}`)));
+      } else if (issues.some(i => i.severity === 'error')) {
+        console.log(chalk.yellow('\n💡 Run with --fix to automatically fix issues'));
+      }
+    }
+  });
+
+// Export intelligence data
+hooksCmd.command('export')
+  .description('Export intelligence data for backup')
+  .option('-o, --output <file>', 'Output file path', 'ruvector-export.json')
+  .option('--include-all', 'Include all data (patterns, memories, trajectories)')
+  .action((opts) => {
+    const intel = new Intelligence();
+    const exportData = {
+      version: '1.0',
+      exported_at: new Date().toISOString(),
+      patterns: intel.data?.patterns || {},
+      memories: opts.includeAll ? (intel.data?.memories || []) : [],
+      trajectories: opts.includeAll ? (intel.data?.trajectories || []) : [],
+      errors: intel.data?.errors || {},
+      stats: intel.stats()
+    };
+
+    const outputPath = path.resolve(opts.output);
+    fs.writeFileSync(outputPath, JSON.stringify(exportData, null, 2));
+
+    console.log(chalk.green(`✅ Exported intelligence data to ${outputPath}`));
+    console.log(chalk.dim(`   ${Object.keys(exportData.patterns).length} patterns`));
+    console.log(chalk.dim(`   ${exportData.memories.length} memories`));
+    console.log(chalk.dim(`   ${exportData.trajectories.length} trajectories`));
+  });
+
+// Import intelligence data
+hooksCmd.command('import')
+  .description('Import intelligence data from backup')
+  .argument('<file>', 'Import file path')
+  .option('--merge', 'Merge with existing data (default: replace)')
+  .option('--dry-run', 'Show what would be imported without making changes')
+  .action((file, opts) => {
+    const importPath = path.resolve(file);
+    if (!fs.existsSync(importPath)) {
+      console.error(chalk.red(`❌ File not found: ${importPath}`));
+      process.exit(1);
+    }
+
+    try {
+      const importData = JSON.parse(fs.readFileSync(importPath, 'utf-8'));
+
+      if (!importData.version) {
+        console.error(chalk.red('❌ Invalid export file (missing version)'));
+        process.exit(1);
+      }
+
+      console.log(chalk.cyan(`📦 Import file: ${file}`));
+      console.log(chalk.dim(`   Version: ${importData.version}`));
+      console.log(chalk.dim(`   Exported: ${importData.exported_at}`));
+      console.log(chalk.dim(`   Patterns: ${Object.keys(importData.patterns || {}).length}`));
+      console.log(chalk.dim(`   Memories: ${(importData.memories || []).length}`));
+      console.log(chalk.dim(`   Trajectories: ${(importData.trajectories || []).length}`));
+
+      if (opts.dryRun) {
+        console.log(chalk.yellow('\n⚠️  Dry run - no changes made'));
+        return;
+      }
+
+      const intel = new Intelligence();
+
+      if (opts.merge) {
+        // Merge patterns
+        Object.assign(intel.data.patterns, importData.patterns || {});
+        // Merge memories (deduplicate by content)
+        const existingContent = new Set((intel.data.memories || []).map(m => m.content));
+        (importData.memories || []).forEach(m => {
+          if (!existingContent.has(m.content)) {
+            intel.data.memories.push(m);
+          }
+        });
+        // Merge trajectories
+        intel.data.trajectories = (intel.data.trajectories || []).concat(importData.trajectories || []);
+        // Merge errors
+        Object.assign(intel.data.errors, importData.errors || {});
+        console.log(chalk.green('✅ Merged intelligence data'));
+      } else {
+        intel.data.patterns = importData.patterns || {};
+        intel.data.memories = importData.memories || [];
+        intel.data.trajectories = importData.trajectories || [];
+        intel.data.errors = importData.errors || {};
+        console.log(chalk.green('✅ Replaced intelligence data'));
+      }
+
+      intel.save();
+      console.log(chalk.dim('   Data saved to .ruvector/intelligence.json'));
+    } catch (e) {
+      console.error(chalk.red(`❌ Failed to import: ${e.message}`));
+      process.exit(1);
+    }
+  });
 
 program.parse();
