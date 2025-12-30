@@ -1,6 +1,5 @@
 {
   "name": "ruvector-dag-wasm",
-  "type": "module",
   "collaborators": [
     "RuVector Contributors"
   ],
@@ -13,7 +12,7 @@
     "ruvector_dag_wasm_bg.js",
     "ruvector_dag_wasm.d.ts"
   ],
-  "main": "ruvector_dag_wasm.js",
+  "module": "ruvector_dag_wasm.js",
   "types": "ruvector_dag_wasm.d.ts",
   "sideEffects": [
     "./ruvector_dag_wasm.js",
