@@ -2233,6 +2233,7 @@ await db.sync('https://api.example.com/vectors');
 | [@ruvector/agentic-synth](https://www.npmjs.com/package/@ruvector/agentic-synth) | Synthetic data generator | [![npm](https://img.shields.io/npm/v/@ruvector/agentic-synth.svg)](https://www.npmjs.com/package/@ruvector/agentic-synth) | [![downloads](https://img.shields.io/npm/dt/@ruvector/agentic-synth.svg)](https://www.npmjs.com/package/@ruvector/agentic-synth) |
 | [@ruvector/graph-data-generator](https://www.npmjs.com/package/@ruvector/graph-data-generator) | Graph data generation | [![npm](https://img.shields.io/npm/v/@ruvector/graph-data-generator.svg)](https://www.npmjs.com/package/@ruvector/graph-data-generator) | [![downloads](https://img.shields.io/npm/dt/@ruvector/graph-data-generator.svg)](https://www.npmjs.com/package/@ruvector/graph-data-generator) |
 | [@ruvector/agentic-integration](https://www.npmjs.com/package/@ruvector/agentic-integration) | Agentic workflows | [![npm](https://img.shields.io/npm/v/@ruvector/agentic-integration.svg)](https://www.npmjs.com/package/@ruvector/agentic-integration) | [![downloads](https://img.shields.io/npm/dt/@ruvector/agentic-integration.svg)](https://www.npmjs.com/package/@ruvector/agentic-integration) |
+| [rvlite](https://www.npmjs.com/package/rvlite) | SQLite-style edge DB (SQL/SPARQL/Cypher) | [![npm](https://img.shields.io/npm/v/rvlite.svg)](https://www.npmjs.com/package/rvlite) | [![downloads](https://img.shields.io/npm/dt/rvlite.svg)](https://www.npmjs.com/package/rvlite) |
 
 
 **Platform-specific native bindings** (auto-detected):
