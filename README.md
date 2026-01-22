@@ -853,7 +853,8 @@ engine.addTrajectoryStep(trajId, activations, attention, 0.9);
 engine.endTrajectory(trajId, 0.95);
 ```
 
-### 🐘 PostgreSQL Extension
+<details>
+<summary><strong>🐘 PostgreSQL Extension</strong></summary>
 
 [![crates.io](https://img.shields.io/crates/v/ruvector-postgres.svg)](https://crates.io/crates/ruvector-postgres)
 [![npm](https://img.shields.io/npm/v/@ruvector/postgres-cli.svg)](https://www.npmjs.com/package/@ruvector/postgres-cli)
@@ -1080,6 +1081,8 @@ SELECT ruvector_flash_attention(query, key, value);
 </details>
 
 See [ruvector-postgres README](./crates/ruvector-postgres/README.md) for full SQL API reference (230+ functions).
+
+</details>
 
 ### Tools & Utilities
 
