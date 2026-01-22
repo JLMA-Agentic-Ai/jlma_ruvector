@@ -1,59 +1,154 @@
 # RuVector Automation Scripts
 
-This directory contains automation scripts to streamline development, deployment, and prevent common issues.
+This directory contains automation scripts organized by purpose.
 
-## 📜 Available Scripts
+## 📁 Directory Structure
 
-### 🚀 deploy.sh
-Comprehensive deployment script for publishing to crates.io and npm.
+```
+scripts/
+├── README.md           # This file
+├── benchmark/          # Performance benchmarking
+├── build/              # Build utilities
+├── ci/                 # CI/CD automation
+├── deploy/             # Deployment scripts
+├── patches/            # Patch files
+├── publish/            # Package publishing
+├── test/               # Testing scripts
+└── validate/           # Validation & verification
+```
 
-Handles:
-- Version management and synchronization
-- Pre-deployment checks (tests, linting, formatting)
-- WASM package builds
-- Crate publishing to crates.io
-- NPM package publishing
-- GitHub Actions trigger for cross-platform builds
+## 🚀 Deployment
+
+Scripts for deploying to production.
+
+| Script | Description |
+|--------|-------------|
+| `deploy/deploy.sh` | Comprehensive deployment (crates.io + npm) |
+| `deploy/test-deploy.sh` | Test deployment without publishing |
+| `deploy/DEPLOYMENT.md` | Full deployment documentation |
+| `deploy/DEPLOYMENT-QUICKSTART.md` | Quick deployment guide |
 
 **Usage:**
 ```bash
 # Full deployment
-./scripts/deploy.sh
+./scripts/deploy/deploy.sh
 
-# Dry run (test without publishing)
-./scripts/deploy.sh --dry-run
+# Dry run
+./scripts/deploy/deploy.sh --dry-run
 
-# See all options
-./scripts/deploy.sh --help
+# Test deployment
+./scripts/deploy/test-deploy.sh
 ```
 
-**See:** [DEPLOYMENT.md](DEPLOYMENT.md) for complete documentation
+## 📦 Publishing
 
-### 🧪 test-deploy.sh
-Tests the deployment script without publishing.
+Scripts for publishing packages to registries.
 
-**Usage:** `./scripts/test-deploy.sh`
+| Script | Description |
+|--------|-------------|
+| `publish/publish-all.sh` | Publish all packages |
+| `publish/publish-crates.sh` | Publish Rust crates to crates.io |
+| `publish/publish-cli.sh` | Publish CLI package |
+| `publish/publish-router-wasm.sh` | Publish router WASM package |
+| `publish/check-and-publish-router-wasm.sh` | Check and publish router WASM |
 
-### 🔄 sync-lockfile.sh
-Automatically syncs `package-lock.json` with `package.json` changes.
+**Usage:**
+```bash
+# Set credentials first
+export CRATES_API_KEY="your-crates-io-token"
+export NPM_TOKEN="your-npm-token"
 
-**Usage:** `./scripts/sync-lockfile.sh`
+# Publish all
+./scripts/publish/publish-all.sh
 
-### 🪝 install-hooks.sh
-Installs git hooks for automatic lock file management.
+# Publish crates only
+./scripts/publish/publish-crates.sh
+```
 
-**Usage:** `./scripts/install-hooks.sh`
+## 📊 Benchmarking
 
-### 🤖 ci-sync-lockfile.sh
-CI/CD script for automatic lock file fixing.
+Performance benchmarking scripts.
 
-**Usage:** `./scripts/ci-sync-lockfile.sh`
+| Script | Description |
+|--------|-------------|
+| `benchmark/run_benchmarks.sh` | Run core benchmarks |
+| `benchmark/run_llm_benchmarks.sh` | Run LLM inference benchmarks |
 
-### 📦 publish-crates.sh
-Legacy script for publishing individual crates. Use `deploy.sh` instead.
+**Usage:**
+```bash
+# Run core benchmarks
+./scripts/benchmark/run_benchmarks.sh
 
-### 🧭 validate-packages.sh
-Validates package configurations and dependencies.
+# Run LLM benchmarks
+./scripts/benchmark/run_llm_benchmarks.sh
+```
+
+## 🧪 Testing
+
+Testing and validation scripts.
+
+| Script | Description |
+|--------|-------------|
+| `test/test-wasm.mjs` | Test WASM bindings |
+| `test/test-graph-cli.sh` | Test graph CLI commands |
+| `test/test-all-graph-commands.sh` | Test all graph commands |
+| `test/test-docker-package.sh` | Test Docker packaging |
+
+**Usage:**
+```bash
+# Test WASM
+node ./scripts/test/test-wasm.mjs
+
+# Test graph CLI
+./scripts/test/test-graph-cli.sh
+```
+
+## ✅ Validation
+
+Package and build verification scripts.
+
+| Script | Description |
+|--------|-------------|
+| `validate/validate-packages.sh` | Validate package configs |
+| `validate/validate-packages-simple.sh` | Simple package validation |
+| `validate/verify-paper-impl.sh` | Verify paper implementation |
+| `validate/verify_hnsw_build.sh` | Verify HNSW build |
+
+**Usage:**
+```bash
+# Validate packages
+./scripts/validate/validate-packages.sh
+
+# Verify HNSW
+./scripts/validate/verify_hnsw_build.sh
+```
+
+## 🔄 CI/CD
+
+Continuous integration scripts.
+
+| Script | Description |
+|--------|-------------|
+| `ci/ci-sync-lockfile.sh` | Auto-fix lock files in CI |
+| `ci/sync-lockfile.sh` | Sync package-lock.json |
+| `ci/install-hooks.sh` | Install git hooks |
+
+**Usage:**
+```bash
+# Install git hooks (recommended)
+./scripts/ci/install-hooks.sh
+
+# Sync lockfile
+./scripts/ci/sync-lockfile.sh
+```
+
+## 🛠️ Build
+
+Build utility scripts located in `build/`.
+
+## 🩹 Patches
+
+Patch files for dependencies located in `patches/`.
 
 ## 🚀 Quick Start
 
@@ -61,48 +156,34 @@ Validates package configurations and dependencies.
 
 1. **Install git hooks** (recommended):
    ```bash
-   ./scripts/install-hooks.sh
+   ./scripts/ci/install-hooks.sh
    ```
 
-2. **Test the hook**:
+2. **Run tests**:
    ```bash
-   cd npm/packages/ruvector
-   npm install chalk
-   git add package.json
-   git commit -m "test: Add chalk dependency"
-   # Hook automatically updates lock file
+   ./scripts/test/test-wasm.mjs
    ```
 
 ### For Deployment
 
-1. **Test deployment script**:
-   ```bash
-   ./scripts/test-deploy.sh
-   ```
-
-2. **Set credentials** (required):
+1. **Set credentials**:
    ```bash
    export CRATES_API_KEY="your-crates-io-token"
    export NPM_TOKEN="your-npm-token"
    ```
 
-3. **Run dry run** (recommended first):
+2. **Dry run first**:
    ```bash
-   ./scripts/deploy.sh --dry-run
+   ./scripts/deploy/deploy.sh --dry-run
    ```
 
-4. **Deploy**:
+3. **Deploy**:
    ```bash
-   ./scripts/deploy.sh
+   ./scripts/deploy/deploy.sh
    ```
-
-## 📖 Documentation
-
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Comprehensive deployment guide
-- **[../docs/CONTRIBUTING.md](../docs/CONTRIBUTING.md)** - Development guide
 
 ## 🔐 Security
 
-**Never commit credentials!** Always use environment variables or secure credential storage.
+**Never commit credentials!** Always use environment variables or `.env` file.
 
-See [DEPLOYMENT.md#security-best-practices](DEPLOYMENT.md#security-best-practices) for details.
+See [deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md) for security best practices.
