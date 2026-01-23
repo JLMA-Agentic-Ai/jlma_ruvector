@@ -216,7 +216,8 @@ npx ruvector
 | **Self-Learning (GNN)** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Runtime Adaptation (SONA)** | ✅ LoRA+EWC++ | ❌ | ❌ | ❌ | ❌ |
 | **AI Agent Routing** | ✅ Tiny Dancer | ❌ | ❌ | ❌ | ❌ |
-| **Attention Mechanisms** | ✅ 39 types | ❌ | ❌ | ❌ | ❌ |
+| **Attention Mechanisms** | ✅ 40 types | ❌ | ❌ | ❌ | ❌ |
+| **Coherence Gate** | ✅ Prime-Radiant | ❌ | ❌ | ❌ | ❌ |
 | **Hyperbolic Embeddings** | ✅ Poincaré+Lorentz | ❌ | ❌ | ❌ | ❌ |
 | **Local Embeddings** | ✅ 8+ models | ❌ | ❌ | ❌ | ❌ |
 | **PostgreSQL Extension** | ✅ 77+ functions | ❌ | ❌ | ❌ | ❌ |
@@ -365,7 +366,7 @@ npx @ruvector/cli hooks install   # Configure for Claude Code
 
 | Feature | What It Does | Why It Matters |
 |---------|--------------|----------------|
-| **39 Mechanisms** | Dot-product, multi-head, flash, linear, sparse, cross-attention | Cover all transformer and GNN use cases |
+| **40 Mechanisms** | Dot-product, multi-head, flash, linear, sparse, cross-attention, CGT sheaf | Cover all transformer and GNN use cases |
 | **Graph Attention** | RoPE, edge-featured, local-global, neighborhood | Purpose-built for graph neural networks |
 | **Hyperbolic Attention** | Poincaré ball operations, curved-space math | Better embeddings for hierarchical data |
 | **SIMD Optimized** | Native Rust with AVX2/NEON acceleration | 2-10x faster than pure JS |
@@ -407,6 +408,7 @@ Task-specific attention variants for efficiency and multi-modal learning.
 | **CrossAttention** | Multi-modal | Image-text, encoder-decoder models |
 | **NeighborhoodAttention** | Graph | Local message passing in GNNs |
 | **HierarchicalAttention** | Structure | Multi-level docs (section → paragraph) |
+| **CGTSheafAttention** | Coherence | Consistency-gated graph transformers |
 
 #### Hyperbolic Math Functions
 
@@ -441,6 +443,42 @@ npx ruvector attention info flash              # Details on FlashAttention
 npx ruvector attention benchmark               # Performance comparison
 npx ruvector attention compute -t dot -d 128   # Run attention computation
 npx ruvector attention hyperbolic -a distance -v "[0.1,0.2]" -b "[0.3,0.4]"
+```
+
+### Coherence Gate (`prime-radiant`)
+
+| Feature | What It Does | Why It Matters |
+|---------|--------------|----------------|
+| **Sheaf Laplacian** | Measures consistency via E(S) = Σ wₑ · ‖ρᵤ(xᵤ) - ρᵥ(xᵥ)‖² | Mathematical proof of coherence |
+| **Compute Ladder** | Reflex (<1ms) → Retrieval (~10ms) → Heavy (~100ms) → Human | Route by confidence level |
+| **LLM Hallucination Gate** | Block incoherent responses with witnesses | Refuse generation when math says contradiction |
+| **GPU/SIMD Acceleration** | wgpu + AVX-512/NEON + vec4 WGSL kernels | 4-16x speedup on coherence checks |
+| **Governance Audit** | Blake3 hash chain, cryptographic witnesses | Every decision is provable |
+
+#### Coherence vs Confidence
+
+| Traditional AI | Prime-Radiant |
+|----------------|---------------|
+| "I'm 85% confident" | "Zero contradictions found" |
+| Can be confidently wrong | Knows when it doesn't know |
+| Guesses about the future | Proves consistency right now |
+| Trust the model | Trust the math |
+
+#### Compute Ladder Routing
+
+| Energy | Lane | Latency | Action |
+|--------|------|---------|--------|
+| < 0.1 | Reflex | < 1ms | Immediate approval |
+| 0.1-0.4 | Retrieval | ~10ms | Fetch more evidence |
+| 0.4-0.7 | Heavy | ~100ms | Deep analysis |
+| > 0.7 | Human | async | Escalate to review |
+
+```bash
+# Install coherence engine
+cargo add prime-radiant
+
+# With GPU acceleration
+cargo add prime-radiant --features gpu,simd
 ```
 
 </details>
@@ -1053,6 +1091,7 @@ await dag.execute();
 | [@ruvector/economy-wasm](https://www.npmjs.com/package/@ruvector/economy-wasm) | Tokenomics WASM | [![npm](https://img.shields.io/npm/v/@ruvector/economy-wasm.svg)](https://www.npmjs.com/package/@ruvector/economy-wasm) | [![downloads](https://img.shields.io/npm/dt/@ruvector/economy-wasm.svg)](https://www.npmjs.com/package/@ruvector/economy-wasm) |
 | [@ruvector/exotic-wasm](https://www.npmjs.com/package/@ruvector/exotic-wasm) | Exotic features WASM | [![npm](https://img.shields.io/npm/v/@ruvector/exotic-wasm.svg)](https://www.npmjs.com/package/@ruvector/exotic-wasm) | [![downloads](https://img.shields.io/npm/dt/@ruvector/exotic-wasm.svg)](https://www.npmjs.com/package/@ruvector/exotic-wasm) |
 | [@ruvector/nervous-system-wasm](https://www.npmjs.com/package/@ruvector/nervous-system-wasm) | Nervous system WASM | [![npm](https://img.shields.io/npm/v/@ruvector/nervous-system-wasm.svg)](https://www.npmjs.com/package/@ruvector/nervous-system-wasm) | [![downloads](https://img.shields.io/npm/dt/@ruvector/nervous-system-wasm.svg)](https://www.npmjs.com/package/@ruvector/nervous-system-wasm) |
+| [ruvector-attention-wasm](https://www.npmjs.com/package/ruvector-attention-wasm) | WASM attention (Flash, MoE, Hyperbolic, CGT Sheaf) | [![npm](https://img.shields.io/npm/v/ruvector-attention-wasm.svg)](https://www.npmjs.com/package/ruvector-attention-wasm) | [![downloads](https://img.shields.io/npm/dt/ruvector-attention-wasm.svg)](https://www.npmjs.com/package/ruvector-attention-wasm) |
 
 </details>
 
@@ -1188,6 +1227,7 @@ let (value, cut_edges) = mincut.compute();
 | [cognitum-gate-kernel](./crates/cognitum-gate-kernel) | Anytime-valid coherence gate kernel | [![crates.io](https://img.shields.io/crates/v/cognitum-gate-kernel.svg)](https://crates.io/crates/cognitum-gate-kernel) |
 | [cognitum-gate-tilezero](./crates/cognitum-gate-tilezero) | TileZero arbiter for coherence decisions | [![crates.io](https://img.shields.io/crates/v/cognitum-gate-tilezero.svg)](https://crates.io/crates/cognitum-gate-tilezero) |
 | [mcp-gate](./crates/mcp-gate) | MCP server for coherence gate integration | [![crates.io](https://img.shields.io/crates/v/mcp-gate.svg)](https://crates.io/crates/mcp-gate) |
+| [prime-radiant](./crates/prime-radiant) | Universal coherence engine - sheaf Laplacian AI safety & hallucination detection | [![crates.io](https://img.shields.io/crates/v/prime-radiant.svg)](https://crates.io/crates/prime-radiant) |
 
 **ruQu Features:** Real-time quantum coherence assessment, MWPM decoder integration, mincut-gated attention (50% FLOPs reduction).
 

@@ -3,12 +3,15 @@ name = "ruvector-hyperbolic-hnsw"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.77"
-license = "MIT"
-authors = ["RuVector Team"]
+license = "MIT OR Apache-2.0"
+authors = ["RuVector Team <team@ruvector.dev>"]
 repository = "https://github.com/ruvnet/ruvector"
-description = "Hyperbolic (Poincaré ball) embeddings with HNSW integration for hierarchy-aware vector search"
-keywords = ["hyperbolic", "poincare", "hnsw", "vector-search", "embeddings"]
+homepage = "https://ruv.io/ruvector"
+documentation = "https://docs.rs/ruvector-hyperbolic-hnsw"
+description = "Hyperbolic (Poincare ball) embeddings with HNSW integration for hierarchy-aware vector search, enabling efficient similarity search in non-Euclidean spaces for taxonomies, ontologies, and hierarchical data"
+keywords = ["hyperbolic", "poincare", "hnsw", "vector-search", "hierarchy"]
 categories = ["algorithms", "science", "mathematics"]
+readme = "README.md"
 
 [lib]
 crate-type = ["rlib"]

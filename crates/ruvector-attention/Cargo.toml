@@ -19,6 +19,8 @@ wasm = []
 napi = ["dep:napi-derive", "dep:napi"]
 # Enable advanced math-based attention mechanisms
 math = ["dep:ruvector-math"]
+# Enable sheaf attention (Coherence-Gated Transformer per ADR-015)
+sheaf = []
 
 [dependencies]
 thiserror = "1.0"

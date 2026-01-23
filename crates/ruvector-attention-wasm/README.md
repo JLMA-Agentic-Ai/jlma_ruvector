@@ -12,6 +12,7 @@ WebAssembly bindings for the ruvector-attention package, providing high-performa
   - Flash Attention (memory-efficient)
   - Local-Global Attention
   - Mixture of Experts (MoE) Attention
+  - **CGT Sheaf Attention** (coherence-gated via Prime-Radiant)
 
 - **Training Utilities**:
   - InfoNCE contrastive loss
@@ -159,7 +160,33 @@ wasm-pack test --headless --firefox
 - `FlashAttention` - Memory-efficient attention
 - `LocalGlobalAttention` - Combined local and global attention
 - `MoEAttention` - Mixture of Experts attention
+- `CGTSheafAttention` - Coherence-gated via Prime-Radiant energy
 - `scaledDotAttention()` - Functional API for basic attention
+
+### CGT Sheaf Attention (Prime-Radiant Integration)
+
+The CGT (Coherence-Gated Transformer) Sheaf Attention mechanism uses Prime-Radiant's sheaf Laplacian energy to gate attention based on mathematical consistency:
+
+```typescript
+import { CGTSheafAttention } from 'ruvector-attention-wasm';
+
+const cgtAttention = new CGTSheafAttention({
+  dim: 128,
+  numHeads: 8,
+  coherenceThreshold: 0.3,  // Block if energy > threshold
+});
+
+// Attention is gated by coherence energy
+const result = cgtAttention.compute(query, keys, values);
+console.log('Coherence energy:', result.energy);
+console.log('Is coherent:', result.isCoherent);
+```
+
+**Key features:**
+- Energy-weighted attention: Lower coherence energy → higher attention
+- Automatic hallucination detection via residual analysis
+- GPU-accelerated with wgpu WGSL shaders (vec4 optimized)
+- SIMD fallback (AVX-512/AVX2/NEON)
 
 ### Training
 

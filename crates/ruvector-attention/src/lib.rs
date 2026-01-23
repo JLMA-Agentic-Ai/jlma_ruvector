@@ -63,6 +63,10 @@ pub mod info_geometry;
 pub mod pde_attention;
 pub mod unified_report;
 
+// Sheaf attention (Coherence-Gated Transformer per ADR-015)
+#[cfg(feature = "sheaf")]
+pub mod sheaf;
+
 // Re-export main types
 pub use attention::{MultiHeadAttention, ScaledDotProductAttention};
 pub use config::{AttentionConfig, GraphAttentionConfig, SparseAttentionConfig};
@@ -132,6 +136,15 @@ pub use info_bottleneck::{
 
 // PDE Attention exports
 pub use pde_attention::{DiffusionAttention, DiffusionConfig, GraphLaplacian, LaplacianType};
+
+// Sheaf Attention exports (Coherence-Gated Transformer per ADR-015)
+#[cfg(feature = "sheaf")]
+pub use sheaf::{
+    ComputeLane, EarlyExit, EarlyExitConfig, EarlyExitResult, EarlyExitStatistics, ExitReason,
+    LaneStatistics, ResidualSparseMask, RestrictionMap, RestrictionMapConfig, RoutingDecision,
+    SheafAttention, SheafAttentionConfig, SparseResidualAttention, SparseResidualConfig,
+    SparsityStatistics, TokenRouter, TokenRouterConfig, process_with_early_exit,
+};
 
 // Unified Report exports
 pub use unified_report::{

@@ -65,6 +65,7 @@ members = [
     "crates/ruvllm",
     "crates/ruvllm-cli",
     "crates/ruvllm-wasm",
+    "crates/prime-radiant",
 ]
 resolver = "2"
 
