@@ -16,6 +16,7 @@ import { join, dirname } from 'node:path';
 import pino from 'pino';
 import { RuvBot, createRuvBot } from './RuvBot.js';
 import { createAIDefenceGuard, type AIDefenceConfig } from './security/AIDefenceGuard.js';
+import { ChatEnhancer, createChatEnhancer } from './core/ChatEnhancer.js';
 import type { AgentConfig } from './core/types.js';
 
 // ============================================================================
@@ -58,6 +59,7 @@ interface Route {
 
 let bot: RuvBot | null = null;
 let aiDefence: ReturnType<typeof createAIDefenceGuard> | null = null;
+let chatEnhancer: ChatEnhancer | null = null;
 const startTime = Date.now();
 
 // ============================================================================
@@ -197,7 +199,7 @@ async function handleHealth(ctx: RequestContext): Promise<void> {
   const { res } = ctx;
   sendJSON(res, 200, {
     status: 'healthy',
-    version: '0.1.8',
+    version: '0.2.0',
     uptime: Math.floor((Date.now() - startTime) / 1000),
     timestamp: new Date().toISOString(),
   });
@@ -248,6 +250,35 @@ async function handleStatus(ctx: RequestContext): Promise<void> {
       hasOpenRouterKey,
       hasGoogleAIKey,
     },
+  });
+}
+
+async function handleSkills(ctx: RequestContext): Promise<void> {
+  const { res } = ctx;
+  if (!chatEnhancer) {
+    sendJSON(res, 200, { skills: [], message: 'ChatEnhancer not initialized' });
+    return;
+  }
+
+  const skills = chatEnhancer.getAvailableSkills();
+  const memoryStats = chatEnhancer.getMemoryStats();
+
+  sendJSON(res, 200, {
+    skills,
+    categories: {
+      search: skills.filter(s => s.id.includes('search')),
+      memory: skills.filter(s => s.id.includes('memory')),
+      code: skills.filter(s => s.id.includes('code')),
+      summarize: skills.filter(s => s.id.includes('summar')),
+    },
+    memoryStats,
+    usage: 'Include skill trigger words in your message to automatically invoke skills.',
+    examples: [
+      'search for TypeScript async patterns',
+      'remember that my project uses React 18',
+      'explain this code: function add(a, b) { return a + b; }',
+      'summarize our conversation',
+    ],
   });
 }
 
@@ -373,17 +404,11 @@ async function handleChat(ctx: RequestContext): Promise<void> {
         threatLevel: analysisResult.threatLevel,
       }, 'Threats detected in message');
 
-      // Block critical threats entirely
-      if (analysisResult.threatLevel === 'critical') {
-        sendError(res, 400, 'Message blocked due to security concerns', 'SECURITY_BLOCKED');
-        inputBlocked = true;
-        return;
-      }
-
-      // Use sanitized input for lower-level threats
-      if (analysisResult.sanitizedInput) {
-        messageContent = analysisResult.sanitizedInput;
-      }
+      // Block threats that exceed the configured threshold (safe = false)
+      // This includes critical, high, and medium threats based on blockThreshold
+      sendError(res, 400, 'Message blocked due to security concerns', 'SECURITY_BLOCKED');
+      inputBlocked = true;
+      return;
     }
   }
 
@@ -392,6 +417,48 @@ async function handleChat(ctx: RequestContext): Promise<void> {
   try {
     logger.debug({ sessionId, messageLength: messageContent.length }, 'Processing chat request');
 
+    // Step 1: Process with ChatEnhancer for skills and memory
+    let enhancedContext = '';
+    let skillsUsed: Array<{ skillId: string; skillName: string; success: boolean; output?: unknown }> = [];
+    let proactiveHints: string[] = [];
+
+    if (chatEnhancer) {
+      try {
+        const enhancedResponse = await chatEnhancer.processMessage(messageContent, {
+          sessionId,
+          userId: (body.userId as string) || 'anonymous',
+          tenantId: 'default',
+          conversationHistory: [],
+        });
+
+        // If skills were used, include their output in the context
+        if (enhancedResponse.skillsUsed && enhancedResponse.skillsUsed.length > 0) {
+          skillsUsed = enhancedResponse.skillsUsed;
+          if (enhancedResponse.content) {
+            enhancedContext = `\n\n**Skill Results:**\n${enhancedResponse.content}\n\n`;
+          }
+        }
+
+        // Collect proactive hints
+        if (enhancedResponse.proactiveHints && enhancedResponse.proactiveHints.length > 0) {
+          proactiveHints = enhancedResponse.proactiveHints;
+        }
+
+        // Log skill usage
+        if (skillsUsed.length > 0) {
+          logger.info({
+            sessionId,
+            skills: skillsUsed.map(s => s.skillId),
+            memoriesRecalled: enhancedResponse.memoriesRecalled?.length || 0,
+          }, 'Skills executed');
+        }
+      } catch (enhanceError) {
+        logger.warn({ err: enhanceError }, 'ChatEnhancer processing failed, continuing with standard chat');
+      }
+    }
+
+    // Step 2: Get LLM response
+    // Note: enhancedContext is prepended to the response content, not passed to the LLM
     const response = await bot.chat(sessionId, messageContent, {
       userId: body.userId as string,
       metadata: body.metadata as Record<string, unknown>,
@@ -414,7 +481,23 @@ async function handleChat(ctx: RequestContext): Promise<void> {
       }
     }
 
-    sendJSON(res, 200, response);
+    // Combine skill output with LLM response
+    let finalContent = response.content;
+    if (enhancedContext && !finalContent.includes(enhancedContext)) {
+      finalContent = enhancedContext + finalContent;
+    }
+
+    // Add proactive hints if available
+    if (proactiveHints.length > 0) {
+      finalContent += '\n\n---\n💡 ' + proactiveHints.join('\n💡 ');
+    }
+
+    sendJSON(res, 200, {
+      ...response,
+      content: finalContent,
+      skillsUsed: skillsUsed.length > 0 ? skillsUsed : undefined,
+      proactiveHints: proactiveHints.length > 0 ? proactiveHints : undefined,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error({ err: error, sessionId, errorMessage: message }, 'Chat request failed');
@@ -432,6 +515,7 @@ const routes: Route[] = [
   { method: 'GET', pattern: /^\/ready$/, handler: handleReady },
   { method: 'GET', pattern: /^\/api\/status$/, handler: handleStatus },
   { method: 'GET', pattern: /^\/api\/models$/, handler: handleModels },
+  { method: 'GET', pattern: /^\/api\/skills$/, handler: handleSkills },
   { method: 'POST', pattern: /^\/api\/agents$/, handler: handleCreateAgent },
   { method: 'GET', pattern: /^\/api\/agents$/, handler: handleListAgents },
   { method: 'POST', pattern: /^\/api\/sessions$/, handler: handleCreateSession },
@@ -532,6 +616,18 @@ async function initializeBot(): Promise<void> {
   });
 
   await bot.start();
+
+  // Initialize ChatEnhancer with skills and memory
+  chatEnhancer = createChatEnhancer({
+    enableSkills: true,
+    enableMemory: true,
+    enableProactiveAssistance: true,
+    memorySearchThreshold: 0.5,
+    memorySearchLimit: 5,
+    skillConfidenceThreshold: 0.6,
+    tenantId: 'default',
+  });
+  logger.info('ChatEnhancer initialized with skills: web-search, memory, code, summarize');
 
   // Initialize AIDefence if not in development
   if (NODE_ENV === 'production') {

@@ -145,22 +145,27 @@ const THREAT_SEVERITY_ORDER: Record<ThreatLevel, number> = {
  * Common prompt injection patterns
  */
 const INJECTION_PATTERNS = [
-  // Direct instruction override
+  // Direct instruction override (flexible word order)
   /ignore\s+(previous|all|above)\s+(instructions?|prompts?|rules?)/i,
-  /disregard\s+(previous|all|above)/i,
-  /forget\s+(everything|all|previous)/i,
+  /ignore\s+all\s+previous\s+(instructions?|prompts?|rules?)/i,
+  /ignore\s+(the\s+)?(previous|above)\s+(instructions?|prompts?|rules?)/i,
+  /disregard\s+(previous|all|above|the|your)/i,
+  /forget\s+(everything|all|previous|your)/i,
 
   // Role manipulation
   /you\s+are\s+(now|actually)\s+/i,
-  /pretend\s+(to\s+be|you're)/i,
-  /act\s+as\s+(if|though)/i,
+  /pretend\s+(to\s+be|you're|you\s+are)/i,
+  /act\s+as\s+(if|though|a)/i,
   /roleplay\s+as/i,
+  /from\s+now\s+on\s+(you|your)/i,
 
   // System prompt extraction
   /what\s+(is|are)\s+your\s+(system\s+)?prompt/i,
   /show\s+(me\s+)?your\s+(system\s+)?instructions/i,
-  /reveal\s+your\s+(hidden|secret)/i,
+  /reveal\s+your\s+(hidden|secret|system)/i,
+  /reveal\s+(the\s+)?system\s+prompt/i,
   /print\s+your\s+(system|initial)\s+prompt/i,
+  /output\s+(your\s+)?(system|initial)\s+prompt/i,
 
   // Jailbreak attempts
   /DAN\s+(mode|prompt)/i,

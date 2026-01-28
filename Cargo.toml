@@ -1,5 +1,5 @@
 [workspace]
-exclude = ["crates/micro-hnsw-wasm", "crates/ruvector-hyperbolic-hnsw", "crates/ruvector-hyperbolic-hnsw-wasm", "examples/ruvLLM/esp32", "examples/ruvLLM/esp32-flash", "examples/edge-net", "examples/data", "examples/ruvLLM"]
+exclude = ["crates/micro-hnsw-wasm", "crates/ruvector-hyperbolic-hnsw", "crates/ruvector-hyperbolic-hnsw-wasm", "examples/ruvLLM/esp32", "examples/ruvLLM/esp32-flash", "examples/edge-net", "examples/data", "examples/ruvLLM", "examples/delta-behavior"]
 members = [
     "crates/ruvector-core",
     "crates/ruvector-node",
@@ -66,6 +66,11 @@ members = [
     "crates/ruvllm-cli",
     "crates/ruvllm-wasm",
     "crates/prime-radiant",
+    "crates/ruvector-delta-core",
+    "crates/ruvector-delta-wasm",
+    "crates/ruvector-delta-index",
+    "crates/ruvector-delta-graph",
+    "crates/ruvector-delta-consensus",
 ]
 resolver = "2"
 

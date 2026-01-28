@@ -740,6 +740,92 @@ npm/packages/ruvllm/scripts/training/
 └── contrastive-finetune.js    # LoRA fine-tuning pipeline
 ```
 
+## 📦 RuvBot Template Library
+
+**Deploy long-running agents with a single command:**
+
+```bash
+npx ruvbot templates list           # List all templates
+npx ruvbot templates info <id>      # Show template details
+npx ruvbot deploy <id> [options]    # Deploy a template
+```
+
+### Template Categories
+
+| Category | Templates | Use Case |
+|----------|-----------|----------|
+| 🔧 **Practical** | `code-reviewer`, `doc-generator`, `test-generator` | Daily development tasks |
+| ⚡ **Intermediate** | `feature-swarm`, `refactor-squad`, `ci-cd-pipeline` | Multi-agent coordination |
+| 🧠 **Advanced** | `self-learning-bot`, `research-swarm`, `performance-optimizer` | Neural patterns, learning |
+| 🌌 **Exotic** | `hive-mind`, `byzantine-validator`, `adversarial-tester`, `multi-repo-coordinator` | Collective intelligence |
+
+### Quick Deploy Examples
+
+```bash
+# Code review with security scanning
+npx ruvbot deploy code-reviewer --repo ./my-project
+
+# Feature development swarm (4 agents)
+npx ruvbot deploy feature-swarm --feature "Add user auth"
+
+# Self-learning assistant with memory
+npx ruvbot deploy self-learning-bot --domain "code-assistance"
+
+# Hive-mind collective (15 agents)
+npx ruvbot deploy hive-mind --objective "Build complete app"
+
+# Byzantine fault-tolerant validation
+npx ruvbot deploy byzantine-validator --quorum 4
+```
+
+## 🤖 RuvBot Deployment
+
+**ALWAYS use the Cloud Run deployment, NOT local Docker:**
+
+| Resource | URL/Value |
+|----------|-----------|
+| **Cloud Run URL** | https://ruvbot-875130704813.us-central1.run.app |
+| **npm Package** | `ruvbot@0.1.1` |
+| **Default Model** | `google/gemini-2.5-pro-preview-05-06` |
+| **Region** | `us-central1` |
+
+### API Endpoints
+```bash
+# Health & Status
+curl https://ruvbot-875130704813.us-central1.run.app/health
+curl https://ruvbot-875130704813.us-central1.run.app/ready
+curl https://ruvbot-875130704813.us-central1.run.app/api/status
+curl https://ruvbot-875130704813.us-central1.run.app/api/models
+
+# Create session
+curl -X POST https://ruvbot-875130704813.us-central1.run.app/api/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"agentId": "default-agent"}'
+
+# Chat (replace SESSION_ID)
+curl -X POST https://ruvbot-875130704813.us-central1.run.app/api/sessions/SESSION_ID/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello"}'
+```
+
+### Update Deployment
+```bash
+# Update env vars
+gcloud run services update ruvbot --region us-central1 \
+  --set-env-vars "DEFAULT_MODEL=google/gemini-2.5-pro-preview-05-06,OPENROUTER_API_KEY=..."
+
+# Redeploy from source
+gcloud run deploy ruvbot --source npm/packages/ruvbot --region us-central1
+```
+
+### Supported Models (via OpenRouter)
+- `google/gemini-2.5-pro-preview-05-06` (default)
+- `google/gemini-2.0-flash-001`
+- `anthropic/claude-3.5-sonnet`
+- `openai/gpt-4o`
+- `qwen/qwq-32b` (reasoning)
+- `deepseek/deepseek-r1` (reasoning)
+
 ## Support
 
 - Documentation: https://github.com/ruvnet/claude-flow

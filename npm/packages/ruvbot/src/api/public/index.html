@@ -137,6 +137,44 @@
       50% { opacity: 0.5; }
     }
 
+    /* Skill Badges */
+    .skill-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .skill-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+    }
+
+    .skill-badge.success {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+    }
+
+    .skill-badge.failed {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    .skill-badge::before {
+      content: '✨';
+      margin-right: 4px;
+    }
+
+    .skill-badge.failed::before {
+      content: '⚠️';
+    }
+
     /* Main Chat Container */
     .chat-container {
       flex: 1;
@@ -759,10 +797,20 @@
         // Remove typing indicator
         typingEl.remove();
 
+        // Build skill badges if skills were used
+        let skillBadges = '';
+        if (data.skillsUsed && data.skillsUsed.length > 0) {
+          const badges = data.skillsUsed.map(s =>
+            `<span class="skill-badge ${s.success ? 'success' : 'failed'}">${s.skillName}</span>`
+          ).join(' ');
+          skillBadges = `<div class="skill-badges">${badges}</div>`;
+          console.log('[RuvBot] Skills used:', data.skillsUsed.map(s => s.skillId));
+        }
+
         // Add assistant message
         const content = data.content || data.message || data.response || 'No response';
         console.log('[RuvBot] Displaying content:', content.substring(0, 100) + '...');
-        addMessage('assistant', content);
+        addMessage('assistant', skillBadges + content);
 
       } catch (err) {
         typingEl.remove();

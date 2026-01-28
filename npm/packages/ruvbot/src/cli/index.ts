@@ -41,7 +41,7 @@ import {
 } from './commands/channels.js';
 import { createDeploymentCommand } from './commands/deploy.js';
 
-const VERSION = '0.1.8';
+const VERSION = '0.2.0';
 
 export function createCLI(): Command {
   const program = new Command();
