@@ -49,6 +49,7 @@
 
 pub mod backend;
 pub mod dequantize;
+pub mod expert_cache;
 pub mod gguf_export;
 pub mod quantizer;
 pub mod rlm_refiner;
@@ -71,5 +72,9 @@ pub use quantizer::{
 };
 pub use rlm_refiner::{RefinementResult, RefinementStepMetrics, RlmRefiner, RlmRefinerConfig};
 pub use backend::{BitNetBackend, BitNetModelConfig};
+pub use expert_cache::{
+    ExpertBatch, ExpertCache, ExpertCacheConfig, ExpertCacheStats, EvictionPolicy,
+    MoeBatchScheduler, NullPrefetcher, Prefetcher,
+};
 pub use ternary_tensor::{pack_ternary, unpack_ternary, TernaryTensor};
 pub use tl1_kernel::{absmax_quantize_activations, generate_tl1_lut, tl1_gemv};

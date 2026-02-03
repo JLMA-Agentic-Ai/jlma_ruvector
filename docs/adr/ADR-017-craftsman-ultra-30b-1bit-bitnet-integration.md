@@ -1523,6 +1523,74 @@ Re-evaluation after remediation must re-run all three gates (not just the failed
 
 ---
 
+### AD-23: Phase-1 Distillation via External GPU Teacher Artifacts
+
+**Status**: Accepted
+
+**Context**: The Ultra 30B ternary MoE system prioritizes CPU-first inference, integrity-driven behavior, and low operational cost. Phase-1 performance goals focus on routing correctness after ternary quantization, citation-grounded answers, and calibrated refusal under thin or conflicting evidence. Full end-to-end GPU distillation of a 30B teacher is expensive, slow, and misaligned with the system's long-term architecture — where RuVector provides memory and structure, and the generator model is intentionally small and cheap. However, pure PTQ ternary conversion (Phase 0) introduces unacceptable degradation in MoE routing stability, answer fidelity on contested prompts, and refusal behavior calibration. We therefore require a limited refinement phase that recovers task-relevant behavior without committing to ongoing GPU dependence.
+
+**Decision**: Phase-1 distillation SHALL be implemented as a **one-time, external GPU artifact generation step**, followed by **local CPU-only refinement**.
+
+1. A full-precision FP16 teacher is executed once on a short-lived cloud GPU instance
+2. The teacher produces **behavioral artifacts, not trained weights**
+3. All refinement and training occurs locally on CPU using these artifacts
+4. GPU infrastructure is not a runtime dependency
+
+**Scope of Teacher Artifacts** (GPU job exports only):
+
+| Artifact | Content | Purpose |
+|----------|---------|---------|
+| **Routing Traces** | Per token, per MoE layer: top-k expert indices + routing probabilities/margins | Preserve expert selection behavior post-quantization |
+| **Sparse Logits** | Answer spans, refusal boundaries, contradiction disclosure points only | Guide LoRA residual correction and refusal calibration without full sequence distillation |
+| **Preference Labels** | Per-prompt classification: resolved / contested / indeterminate | Train stop decisions and disclosure behavior |
+
+Artifacts SHALL be stored as immutable, versioned files and reused across refinement runs.
+
+**CPU-Only Refinement Strategy** (using teacher artifacts):
+
+1. **Router Repair** — Match student top-k routing to teacher traces; penalize expert churn and margin collapse
+2. **Low-Rank Residual Correction** — Apply LoRA-style residuals to compensate ternary approximation error; enforce strict parameter budget
+3. **EWC++ Preservation** — Prevent catastrophic drift outside repaired regions
+4. **Policy Optimization** — Train RLM stop and retrieval behavior; optimize for citation correctness and calibrated refusal
+
+No full expert weight updates are allowed in Phase-1.
+
+**Evaluation Gate**: A checkpoint SHALL NOT be promoted unless it passes behavioral evaluation, not reconstruction metrics. Mandatory metrics:
+
+| Metric | Criterion | Gate |
+|--------|-----------|------|
+| Routing correctness | Top-k overlap with teacher + margin correlation | Gate 1 (AD-22) |
+| Citation correctness | Span hash verification + evidence support via RuVector | Gate 2 (AD-22) |
+| Refusal calibration | Refuse on indeterminate, disclose on contested, pass on resolved | Gate 3 (AD-22) |
+
+`compute_dequant_error` is a sanity check only, not a promotion criterion.
+
+**Acceptance Criteria**:
+
+- [ ] System passes the 200-prompt disagreement suite
+- [ ] Routing correctness meets Gate 1 threshold (>= 0.85)
+- [ ] Citation precision exceeds 0.90 (Gate 2 precision target)
+- [ ] Refusal behavior aligns with RuVector coherence signals (Gate 3 F1 >= 0.85)
+- [ ] Results remain stable under 10% corpus perturbation
+- [ ] GPU artifact generation completes in single cloud session (< 4 hours)
+- [ ] CPU refinement reproducible without GPU access
+
+**Alternatives Considered**:
+
+| Alternative | Verdict | Reason |
+|-------------|---------|--------|
+| Full GPU distillation | Rejected | High cost, long iteration cycles, misalignment with CPU-first design |
+| Pure PTQ without refinement | Rejected | Unacceptable routing instability, incorrect refusal behavior, citation degradation |
+| Continuous GPU shadow training | Rejected | Operational complexity, long-term infrastructure lock-in |
+
+**Consequences**:
+
+- *Positive*: GPU cost is bounded and minimal; refinement is repeatable and auditable; CPU-first deployment remains intact; system behavior aligns with integrity goals; distillation artifacts are reusable
+- *Negative*: General language quality parity with FP16 teacher is not guaranteed; some PTQ loss may remain in non-critical behaviors; requires building custom evaluation infrastructure (addressed by AD-22)
+- *Note*: This ADR does not preclude a future Phase-2 distillation if product requirements shift toward general language parity. Phase-2 would be a separate decision
+
+---
+
 ## Consequences
 
 ### Positive
@@ -1554,6 +1622,9 @@ Re-evaluation after remediation must re-run all three gates (not just the failed
 25. **Zero-annotation auto-labeling**: RuVector retrieval signals (evidence redundancy, cluster disagreement, mincut fragility) classify prompts as resolved/contested/indeterminate without human annotation effort
 26. **Gate-specific remediation**: Each failed gate maps to a concrete repair action using existing RLM components (ContrastiveTrainer for routing, GrpoOptimizer for citations and refusal), avoiding manual debugging cycles
 27. **CPU-only evaluation**: Full eval suite runs on Mac Studio in < 2 hours with no cloud GPU or external API dependency, keeping the evaluation loop at $0 marginal cost
+28. **Bounded GPU cost**: Phase-1 distillation requires only a single short-lived cloud GPU session to generate behavioral artifacts (routing traces, sparse logits, preference labels) — no ongoing GPU dependency
+29. **Artifact reusability**: Teacher artifacts are immutable and versioned; CPU refinement runs can be repeated, tuned, and audited without re-running the GPU job
+30. **Behavioral distillation**: Distilling routing decisions and refusal signals rather than full logit sequences aligns training objectives with the system's integrity-first design goal
 
 ### Negative
 
@@ -1568,6 +1639,8 @@ Re-evaluation after remediation must re-run all three gates (not just the failed
 9. **Teacher trace dependency**: Gate 1 requires a full FP16 teacher forward pass to generate ground-truth routing traces; this must be re-run whenever the evaluation suite changes or the teacher model is updated
 10. **Auto-label noise**: RuVector-derived labels (evidence redundancy, mincut fragility) are proxies for true answerability; edge cases near thresholds (e.g., fragility = 0.69 vs 0.71) may produce inconsistent labels across corpus versions
 11. **200-prompt suite coverage**: A fixed 200-prompt suite may not cover all failure modes; adversarial or distribution-shifted prompts could pass all gates yet fail in production
+12. **General quality ceiling**: Phase-1 behavioral distillation intentionally does not target full language quality parity with FP16 teacher; non-critical behaviors may remain degraded
+13. **Teacher artifact staleness**: If the evaluation prompt suite or teacher model changes, routing traces and preference labels must be regenerated on GPU
 
 ### Risks
 
@@ -1677,3 +1750,9 @@ Re-evaluation after remediation must re-run all three gates (not just the failed
 30. Rust `core::arch::wasm32` SIMD intrinsics — https://doc.rust-lang.org/beta/core/arch/wasm32/index.html
 31. "The state of SIMD in Rust in 2025" (Sergey Davidoff) — https://shnatsel.medium.com/the-state-of-simd-in-rust-in-2025-32c263e5f53d
 32. "Rust + WebAssembly 2025: WasmGC and SIMD" — https://dev.to/dataformathub/rust-webassembly-2025-why-wasmgc-and-simd-change-everything-3ldh
+33. Bai, Y. et al., "Constitutional AI: Harmlessness from AI Feedback" (arXiv:2212.08073, Dec 2022) — https://arxiv.org/abs/2212.08073
+34. Zheng, L. et al., "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena" (arXiv:2306.05685, Jun 2023) — https://arxiv.org/abs/2306.05685
+35. Rafailov, R. et al., "Direct Preference Optimization: Your Language Model is Secretly a Reward Model" (arXiv:2305.18290, May 2023) — https://arxiv.org/abs/2305.18290
+36. Min, S. et al., "FActScore: Fine-grained Atomic Evaluation of Factual Precision in Long Form Text Generation" (arXiv:2305.14251, May 2023) — https://arxiv.org/abs/2305.14251
+37. RuvLLM BitNet Backend: `crates/ruvllm/src/bitnet/backend.rs` (MoE routing, TL1 GEMV, forward pass)
+38. RuvLLM RLM Refiner: `crates/ruvllm/src/bitnet/rlm_refiner.rs` (Phase 0.5 refinement orchestrator)
