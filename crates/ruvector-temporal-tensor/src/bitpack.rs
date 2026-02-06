@@ -49,6 +49,7 @@ pub fn unpack(data: &[u8], bits: u32, count: usize, out: &mut Vec<u32>) {
 }
 
 /// Compute qmax for a given bit width: 2^(bits-1) - 1
+#[inline]
 pub fn qmax_from_bits(bits: u8) -> i32 {
     if bits == 0 || bits > 8 {
         return 0;

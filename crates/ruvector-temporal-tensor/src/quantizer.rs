@@ -16,14 +16,12 @@ pub fn compute_scales(frame: &[f32], group_len: usize, bits: u8) -> Vec<u16> {
     }
     let qmax_f = qmax as f32;
 
-    let mut scales = Vec::with_capacity((frame.len() + group_len - 1) / group_len);
-    let mut idx = 0;
+    let num_groups = (frame.len() + group_len - 1) / group_len;
+    let mut scales = Vec::with_capacity(num_groups);
 
-    while idx < frame.len() {
-        let end = (idx + group_len).min(frame.len());
+    for chunk in frame.chunks(group_len) {
         let mut max_abs = 0.0f32;
-
-        for &v in &frame[idx..end] {
+        for &v in chunk {
             if v.is_finite() {
                 let a = v.abs();
                 if a > max_abs {
@@ -34,55 +32,53 @@ pub fn compute_scales(frame: &[f32], group_len: usize, bits: u8) -> Vec<u16> {
 
         let scale = if max_abs == 0.0 { 0.0 } else { max_abs / qmax_f };
         scales.push(f16::f32_to_f16_bits(scale));
-        idx = end;
     }
 
     scales
 }
 
+/// Pre-convert f16 scales to f32 for hot-path use.
+#[inline]
+pub fn scales_to_f32(scales_f16: &[u16]) -> Vec<f32> {
+    scales_f16.iter().map(|&s| f16::f16_bits_to_f32(s)).collect()
+}
+
 /// Check if a frame fits within existing scales (within drift tolerance).
-pub fn frame_fits_scales(
+/// Uses pre-converted f32 scales to avoid repeated f16 conversion.
+pub fn frame_fits_scales_f32(
     frame: &[f32],
-    scales: &[u16],
+    scales_f32: &[f32],
     group_len: usize,
     bits: u8,
     drift_factor: f32,
 ) -> bool {
     let qmax = qmax_from_bits(bits);
-    if qmax == 0 || scales.is_empty() {
+    if qmax == 0 || scales_f32.is_empty() {
         return false;
     }
     let qmax_f = qmax as f32;
 
-    let mut group_idx = 0;
-    let mut idx = 0;
-
-    while idx < frame.len() {
-        if group_idx >= scales.len() {
+    for (group_idx, chunk) in frame.chunks(group_len).enumerate() {
+        if group_idx >= scales_f32.len() {
             return false;
         }
+        let allowed = scales_f32[group_idx] * qmax_f * drift_factor;
 
-        let scale = f16::f16_bits_to_f32(scales[group_idx]);
-        let allowed = scale * qmax_f * drift_factor;
-
-        let end = (idx + group_len).min(frame.len());
-        for &v in &frame[idx..end] {
+        for &v in chunk {
             if v.is_finite() && v.abs() > allowed {
                 return false;
             }
         }
-
-        group_idx += 1;
-        idx = end;
     }
 
     true
 }
 
-/// Quantize a frame using pre-computed scales and pack into bitstream.
-pub fn quantize_and_pack(
+/// Quantize a frame using pre-computed f32 scales and pack into bitstream.
+/// Caller must pre-convert f16 scales to f32 via `scales_to_f32`.
+pub fn quantize_and_pack_f32(
     frame: &[f32],
-    scales: &[u16],
+    scales_f32: &[f32],
     group_len: usize,
     bits: u8,
     out: &mut Vec<u8>,
@@ -95,18 +91,22 @@ pub fn quantize_and_pack(
     let bias = qmax;
     let bits_u32 = bits as u32;
 
+    // Pre-reserve: each value takes `bits` bits, total = ceil(len * bits / 8)
+    let needed_bytes = (frame.len() * bits as usize + 7) / 8;
+    out.reserve(needed_bytes);
+
     let mut acc: u64 = 0;
     let mut acc_bits: u32 = 0;
 
-    let mut group_idx = 0;
-    let mut idx = 0;
-
-    while idx < frame.len() {
-        let end = (idx + group_len).min(frame.len());
-        let scale = f16::f16_bits_to_f32(scales[group_idx]);
+    for (group_idx, chunk) in frame.chunks(group_len).enumerate() {
+        let scale = if group_idx < scales_f32.len() {
+            scales_f32[group_idx]
+        } else {
+            0.0
+        };
         let inv_scale = if scale == 0.0 { 0.0 } else { 1.0 / scale };
 
-        for &v in &frame[idx..end] {
+        for &v in chunk {
             let mut q: i32 = 0;
             if v.is_finite() {
                 let scaled = v * inv_scale;
@@ -124,9 +124,6 @@ pub fn quantize_and_pack(
                 acc_bits -= 8;
             }
         }
-
-        group_idx += 1;
-        idx = end;
     }
 
     if acc_bits > 0 {
@@ -134,10 +131,13 @@ pub fn quantize_and_pack(
     }
 }
 
-/// Dequantize packed codes using scales, writing f32 values.
-pub fn dequantize(
+/// Dequantize packed codes using f32 scales, writing f32 values.
+///
+/// Optimized: iterates by frame then by group to avoid per-value modulo/division
+/// and caches the f32 scale per group instead of converting f16 per value.
+pub fn dequantize_f32(
     data: &[u8],
-    scales: &[u16],
+    scales_f32: &[f32],
     group_len: usize,
     bits: u8,
     tensor_len: usize,
@@ -157,37 +157,85 @@ pub fn dequantize(
 
     let mut acc: u64 = 0;
     let mut acc_bits: u32 = 0;
-    let mut byte_idx = 0;
-    let mut val_idx = 0;
+    let mut byte_idx = 0usize;
+    let mut out_idx = 0usize;
 
-    while val_idx < total {
-        // Fill accumulator
-        while acc_bits < bits_u32 && byte_idx < data.len() {
-            acc |= (data[byte_idx] as u64) << acc_bits;
-            acc_bits += 8;
-            byte_idx += 1;
+    for _frame in 0..frame_count {
+        let mut pos = 0usize;
+        let mut group_idx = 0usize;
+
+        while pos < tensor_len {
+            let group_end = (pos + group_len).min(tensor_len);
+            let scale = if group_idx < scales_f32.len() {
+                scales_f32[group_idx]
+            } else {
+                0.0
+            };
+
+            while pos < group_end {
+                // Fill accumulator
+                while acc_bits < bits_u32 && byte_idx < data.len() {
+                    acc |= (data[byte_idx] as u64) << acc_bits;
+                    acc_bits += 8;
+                    byte_idx += 1;
+                }
+                if acc_bits < bits_u32 {
+                    return; // Ran out of data
+                }
+
+                let u = (acc & mask) as u32;
+                acc >>= bits_u32;
+                acc_bits -= bits_u32;
+
+                let q = (u as i32) - bias;
+                out[out_idx] = (q as f32) * scale;
+                out_idx += 1;
+                pos += 1;
+            }
+
+            group_idx += 1;
         }
-        if acc_bits < bits_u32 {
-            break;
-        }
-
-        let u = (acc & mask) as u32;
-        acc >>= bits_u32;
-        acc_bits -= bits_u32;
-
-        let q = (u as i32) - bias;
-        let within_frame = val_idx % tensor_len;
-        let group_idx = within_frame / group_len;
-
-        let scale = if group_idx < scales.len() {
-            f16::f16_bits_to_f32(scales[group_idx])
-        } else {
-            0.0
-        };
-
-        out[val_idx] = (q as f32) * scale;
-        val_idx += 1;
     }
+}
+
+// --- Legacy API (kept for backward compatibility with segment.rs) ---
+
+/// Check if a frame fits within existing f16 scales (within drift tolerance).
+pub fn frame_fits_scales(
+    frame: &[f32],
+    scales: &[u16],
+    group_len: usize,
+    bits: u8,
+    drift_factor: f32,
+) -> bool {
+    let scales_f32 = scales_to_f32(scales);
+    frame_fits_scales_f32(frame, &scales_f32, group_len, bits, drift_factor)
+}
+
+/// Quantize a frame using pre-computed f16 scales and pack into bitstream.
+pub fn quantize_and_pack(
+    frame: &[f32],
+    scales: &[u16],
+    group_len: usize,
+    bits: u8,
+    out: &mut Vec<u8>,
+) {
+    let scales_f32 = scales_to_f32(scales);
+    quantize_and_pack_f32(frame, &scales_f32, group_len, bits, out)
+}
+
+/// Dequantize packed codes using f16 scales, writing f32 values.
+pub fn dequantize(
+    data: &[u8],
+    scales: &[u16],
+    group_len: usize,
+    bits: u8,
+    tensor_len: usize,
+    frame_count: usize,
+    out: &mut Vec<f32>,
+) {
+    let scales_f32 = scales_to_f32(scales);
+    dequantize_f32(data, &scales_f32, group_len, bits, tensor_len, frame_count, out)
 }
 
 #[cfg(test)]
@@ -229,11 +277,52 @@ mod tests {
         dequantize(&packed, &scales, group_len, bits, frame.len(), 1, &mut decoded);
 
         assert_eq!(decoded.len(), frame.len());
-        // 3-bit has higher error but should be bounded
         let max_val = frame.iter().map(|v| v.abs()).fold(0.0f32, f32::max);
         for (&orig, &dec) in frame.iter().zip(decoded.iter()) {
             let err = (orig - dec).abs();
             assert!(err < max_val * 0.35, "orig={orig}, dec={dec}, err={err}");
+        }
+    }
+
+    #[test]
+    fn test_quantize_roundtrip_5bit() {
+        let frame: Vec<f32> = (0..256).map(|i| (i as f32 - 128.0) * 0.05).collect();
+        let group_len = 64;
+        let bits = 5;
+
+        let scales = compute_scales(&frame, group_len, bits);
+        let mut packed = Vec::new();
+        quantize_and_pack(&frame, &scales, group_len, bits, &mut packed);
+
+        let mut decoded = Vec::new();
+        dequantize(&packed, &scales, group_len, bits, frame.len(), 1, &mut decoded);
+
+        assert_eq!(decoded.len(), frame.len());
+        let max_val = frame.iter().map(|v| v.abs()).fold(0.0f32, f32::max);
+        for (&orig, &dec) in frame.iter().zip(decoded.iter()) {
+            let err = (orig - dec).abs();
+            assert!(err < max_val * 0.08, "orig={orig}, dec={dec}, err={err}");
+        }
+    }
+
+    #[test]
+    fn test_quantize_roundtrip_7bit() {
+        let frame: Vec<f32> = (0..256).map(|i| (i as f32 - 128.0) * 0.05).collect();
+        let group_len = 64;
+        let bits = 7;
+
+        let scales = compute_scales(&frame, group_len, bits);
+        let mut packed = Vec::new();
+        quantize_and_pack(&frame, &scales, group_len, bits, &mut packed);
+
+        let mut decoded = Vec::new();
+        dequantize(&packed, &scales, group_len, bits, frame.len(), 1, &mut decoded);
+
+        assert_eq!(decoded.len(), frame.len());
+        for (i, (&orig, &dec)) in frame.iter().zip(decoded.iter()).enumerate() {
+            let err = (orig - dec).abs();
+            let max_err = if orig.abs() > 0.01 { orig.abs() * 0.02 } else { 0.1 };
+            assert!(err < max_err, "i={i}, orig={orig}, dec={dec}, err={err}");
         }
     }
 
@@ -262,6 +351,71 @@ mod tests {
 
         for &v in &decoded {
             assert_eq!(v, 0.0);
+        }
+    }
+
+    #[test]
+    fn test_non_finite_values() {
+        let mut frame = vec![1.0f32; 64];
+        frame[10] = f32::NAN;
+        frame[20] = f32::INFINITY;
+        frame[30] = f32::NEG_INFINITY;
+
+        let scales = compute_scales(&frame, 64, 8);
+        let mut packed = Vec::new();
+        quantize_and_pack(&frame, &scales, 64, 8, &mut packed);
+
+        let mut decoded = Vec::new();
+        dequantize(&packed, &scales, 64, 8, 64, 1, &mut decoded);
+
+        assert_eq!(decoded.len(), 64);
+        // Non-finite values should quantize to 0
+        assert_eq!(decoded[10], 0.0);
+        assert_eq!(decoded[20], 0.0);
+        assert_eq!(decoded[30], 0.0);
+        // Normal values should be close
+        assert!((decoded[0] - 1.0).abs() < 0.02);
+    }
+
+    #[test]
+    fn test_single_element_group() {
+        let frame = vec![3.14f32; 16];
+        let group_len = 1; // Extreme: 1 element per group
+        let bits = 8;
+
+        let scales = compute_scales(&frame, group_len, bits);
+        assert_eq!(scales.len(), 16);
+
+        let mut packed = Vec::new();
+        quantize_and_pack(&frame, &scales, group_len, bits, &mut packed);
+
+        let mut decoded = Vec::new();
+        dequantize(&packed, &scales, group_len, bits, 16, 1, &mut decoded);
+
+        for (i, &v) in decoded.iter().enumerate() {
+            let err = (v - 3.14).abs();
+            assert!(err < 0.03, "i={i} v={v} err={err}");
+        }
+    }
+
+    #[test]
+    fn test_compression_ratio() {
+        let frame = vec![1.0f32; 512];
+        let group_len = 64;
+
+        for &(bits, min_ratio) in &[(8u8, 3.5f32), (7, 4.0), (5, 5.5), (3, 8.5)] {
+            let scales = compute_scales(&frame, group_len, bits);
+            let mut packed = Vec::new();
+            quantize_and_pack(&frame, &scales, group_len, bits, &mut packed);
+
+            let raw_bytes = frame.len() * 4;
+            let compressed = packed.len() + scales.len() * 2;
+            let ratio = raw_bytes as f32 / compressed as f32;
+
+            assert!(
+                ratio >= min_ratio,
+                "bits={bits}: ratio {ratio:.2}x < expected {min_ratio}x"
+            );
         }
     }
 }

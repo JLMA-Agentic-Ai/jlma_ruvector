@@ -3,6 +3,7 @@
 /// No external crate dependencies. Handles normals, denormals, infinity, and NaN.
 
 /// Convert f32 to f16 bit representation.
+#[inline]
 pub fn f32_to_f16_bits(x: f32) -> u16 {
     let b = x.to_bits();
     let sign = ((b >> 16) & 0x8000) as u16;
@@ -51,6 +52,7 @@ pub fn f32_to_f16_bits(x: f32) -> u16 {
 }
 
 /// Convert f16 bit representation to f32.
+#[inline]
 pub fn f16_bits_to_f32(h: u16) -> f32 {
     let sign = ((h & 0x8000) as u32) << 16;
     let exp = ((h >> 10) & 0x1F) as i32;
