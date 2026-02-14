@@ -5,6 +5,8 @@
 **Parent**: ADR-017 Temporal Tensor Compression, ADR-018 Block-Based Storage Engine
 **Author**: System Architecture Team
 
+**Note**: Delta compression is now implemented via RVF OVERLAY_SEG as part of ADR-029. See the overlay epochs specification (docs/research/rvf/spec/05-overlay-epochs.md).
+
 ## Version History
 
 | Version | Date | Author | Changes |

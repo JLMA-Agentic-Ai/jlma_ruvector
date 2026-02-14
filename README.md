@@ -8,28 +8,33 @@
 [![ruv.io](https://img.shields.io/badge/ruv.io-website-purple.svg)](https://ruv.io)
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-**The vector database that gets smarter the more you use it.**
+**The vector database that gets smarter the more you use it — and now ships as a cognitive container.**
 
 ```bash
 npx ruvector
 ```
 
-Most vector databases are static—they store embeddings and search them. That's it. RuVector is different: it learns from every query, runs LLMs locally, scales horizontally, and costs nothing to operate.
+Most vector databases are static — they store embeddings and search them. That's it. RuVector is different: it learns from every query, runs LLMs locally, scales horizontally, boots as a Linux microservice from a single file, and costs nothing to operate.
 
 | | Pinecone/Weaviate | RuVector |
 |---|---|---|
-| **Search improves over time** | ❌ | ✅ GNN layers learn from usage |
-| **Run LLMs locally** | ❌ | ✅ ruvllm + RuvLTRA models ($0) |
-| **Graph queries (Cypher)** | ❌ | ✅ `MATCH (a)-[:SIMILAR]->(b)` |
-| **Self-learning AI hooks** | ❌ | ✅ Q-learning, HNSW memory |
-| **Real-time graph updates** | ❌ Rebuild index | ✅ Dynamic min-cut (no rebuild) |
-| **Horizontal scaling** | 💰 Paid | ✅ Raft consensus, free |
-| **Works offline** | ❌ | ✅ Browser, edge, embedded |
+| 🧠 **Search improves over time** | ❌ | ✅ The more you search, the better results get |
+| 🤖 **Run LLMs locally** | ❌ | ✅ Run AI models on your own machine for free |
+| 🔗 **Graph queries** | ❌ | ✅ Ask questions about relationships between data |
+| 📚 **Self-learning** | ❌ | ✅ System watches what works and gets smarter |
+| 🚀 **Self-booting microservice** | ❌ | ✅ [One file boots into a running service](./crates/rvf/README.md) in 125 ms |
+| ⚡ **Real-time graph updates** | ❌ Must rebuild | ✅ Update connections instantly, no downtime |
+| 📦 **Single-file deployment** | ❌ Server required | ✅ One file — copy it anywhere and it just works |
+| 🔐 **Tamper-proof audit trail** | ❌ | ✅ Every operation is cryptographically recorded |
+| 🌐 **Works offline** | ❌ | ✅ Runs in browsers, phones, IoT, and bare metal |
+| 💰 **Cost** | Per-query pricing | ✅ Free forever — open source (MIT) |
+| 📈 **Scales horizontally** | 💰 Paid tiers | ✅ Add nodes freely, no per-vector fees |
+| 🌿 **Git-like branching** | ❌ | ✅ Branch your data like code — only changes are copied |
 
-**One package. Everything included:** vector search, graph queries, GNN learning, distributed clustering, local LLMs, 39 attention mechanisms, and WASM support.
+**One package. Everything included:** vector search, graph queries, GNN learning, distributed clustering, local LLMs, 40+ attention mechanisms, cognitive containers ([RVF](./crates/rvf/README.md) — self-booting `.rvf` files with eBPF, witness chains, and COW branching), and WASM support.
 
 <details>
-<summary>📋 See Full Capabilities (34 features)</summary>
+<summary>📋 See Full Capabilities (42 features)</summary>
 
 **Core Vector Database**
 | # | Capability | What It Does |
@@ -54,48 +59,62 @@ Most vector databases are static—they store embeddings and search them. That's
 | 10 | **Run LLMs locally** | ruvllm with GGUF, Metal/CUDA/ANE acceleration |
 | 11 | **RuvLTRA models** | Pre-trained GGUF for routing & embeddings (<10ms) → [HuggingFace](https://huggingface.co/ruv/ruvltra) |
 | 12 | **SONA learning** | Self-Optimizing Neural Architecture with LoRA, EWC++ |
-| 13 | **39 attention mechanisms** | Flash, linear, graph, hyperbolic, mincut-gated (50% compute) |
+| 13 | **40+ attention mechanisms** | Flash, linear, graph, hyperbolic, mincut-gated (50% compute) |
 | 14 | **Spiking neural networks** | Event-driven neuromorphic computing |
 | 15 | **Mincut-gated transformer** | Dynamic attention via graph min-cut optimization |
 | 16 | **Route AI requests** | Semantic routing + FastGRNN for LLM optimization |
 
+**Cognitive Containers ([RVF](./crates/rvf/README.md))**
+| # | Capability | What It Does |
+|---|------------|--------------|
+| 17 | **Self-boot as a microservice** | A `.rvf` file contains a real Linux kernel — drop it on a VM and it boots in 125 ms |
+| 18 | **eBPF acceleration** | Hot vectors served in kernel data path via XDP, socket filter, and TC programs |
+| 19 | **5.5 KB WASM runtime** | Same file runs queries in a browser tab with zero backend |
+| 20 | **COW branching** | Git-like copy-on-write — 1M-vector parent, 100 edits = ~2.5 MB child |
+| 21 | **Witness chains** | Tamper-evident hash-linked audit trail for every operation |
+| 22 | **Post-quantum signatures** | ML-DSA-65 and SLH-DSA-128s alongside Ed25519 |
+| 23 | **DNA-style lineage** | Track parent/child derivation chains with cryptographic hashes |
+| 24 | **20 segment types** | VEC, INDEX, KERNEL, EBPF, COW_MAP, WITNESS, CRYPTO, and 13 more |
+
 **Specialized Processing**
 | # | Capability | What It Does |
 |---|------------|--------------|
-| 17 | **SciPix OCR** | LaTeX/MathML extraction from scientific documents |
-| 18 | **DAG workflows** | Self-learning directed acyclic graph execution |
-| 19 | **Cognitum Gate** | Cognitive AI gateway with TileZero acceleration |
-| 20 | **FPGA transformer** | Hardware-accelerated transformer inference |
-| 21 | **Quantum coherence** | ruQu for quantum error correction via dynamic min-cut |
+| 25 | **SciPix OCR** | LaTeX/MathML extraction from scientific documents |
+| 26 | **DAG workflows** | Self-learning directed acyclic graph execution |
+| 27 | **Cognitum Gate** | Cognitive AI gateway with TileZero acceleration |
+| 28 | **FPGA transformer** | Hardware-accelerated transformer inference |
+| 29 | **Quantum coherence** | ruQu for quantum error correction via dynamic min-cut |
 
 **Genomics & Health**
 | # | Capability | What It Does |
 |---|------------|--------------|
-| 22 | **rvDNA genomic analysis** | Variant calling, protein translation, HNSW k-mer search in 12 ms |
-| 23 | **`.rvdna` file format** | AI-native binary with pre-computed vectors, tensors, and embeddings |
-| 24 | **Instant diagnostics** | Sickle cell, cancer mutations, drug dosing — runs on any device |
-| 25 | **Privacy-first WASM** | Browser-based genomics, data never leaves the device |
+| 30 | **rvDNA genomic analysis** | Variant calling, protein translation, HNSW k-mer search in 12 ms |
+| 31 | **`.rvdna` file format** | AI-native binary with pre-computed vectors, tensors, and embeddings |
+| 32 | **Instant diagnostics** | Sickle cell, cancer mutations, drug dosing — runs on any device |
+| 33 | **Privacy-first WASM** | Browser-based genomics, data never leaves the device |
 
 **Platform & Integration**
 | # | Capability | What It Does |
 |---|------------|--------------|
-| 26 | **Run anywhere** | Node.js, browser (WASM), edge (rvLite), HTTP server, Rust |
-| 27 | **Drop into Postgres** | pgvector-compatible extension with SIMD acceleration |
-| 28 | **MCP integration** | Model Context Protocol server for AI assistant tools |
-| 29 | **Cloud deployment** | One-click deploy to Cloud Run, Kubernetes |
+| 34 | **Run anywhere** | Node.js, browser (WASM), edge (rvLite), HTTP server, Rust, bare metal |
+| 35 | **Drop into Postgres** | pgvector-compatible extension with SIMD acceleration |
+| 36 | **MCP integration** | Model Context Protocol server for AI assistant tools |
+| 37 | **Cloud deployment** | One-click deploy to Cloud Run, Kubernetes |
+| 38 | **13 Rust crates + 4 npm packages** | [RVF SDK](./crates/rvf/README.md) published on [crates.io](https://crates.io/crates/rvf-runtime) and [npm](https://www.npmjs.com/package/@ruvector/rvf) |
 
 **Self-Learning & Adaptation**
 | # | Capability | What It Does |
 |---|------------|--------------|
-| 30 | **Self-learning hooks** | Q-learning, neural patterns, HNSW memory |
-| 31 | **ReasoningBank** | Trajectory learning with verdict judgment |
-| 32 | **Economy system** | Tokenomics, CRDT-based distributed state |
-| 33 | **Nervous system** | Event-driven reactive architecture |
-| 34 | **Agentic synthesis** | Multi-agent workflow composition |
+| 39 | **Self-learning hooks** | Q-learning, neural patterns, HNSW memory |
+| 40 | **ReasoningBank** | Trajectory learning with verdict judgment |
+| 41 | **Economy system** | Tokenomics, CRDT-based distributed state |
+| 42 | **Agentic synthesis** | Multi-agent workflow composition |
 
 </details>
 
-*Think of it as: **Pinecone + Neo4j + PyTorch + llama.cpp + postgres + etcd** — in one Rust package.*
+*Think of it as: **Pinecone + Neo4j + PyTorch + llama.cpp + postgres + etcd + Docker** — in one Rust package.*
+
+*The [RVF cognitive container](./crates/rvf/README.md) is the Docker part: a single `.rvf` file that stores vectors, ships models, boots as a Linux microservice in 125 ms, accelerates queries via eBPF, branches like Git at cluster granularity, and proves every operation through a cryptographic witness chain — all without external dependencies.*
 
 ---
 
@@ -176,6 +195,42 @@ npm install @ruvector/rvdna  # JavaScript / TypeScript
 - **Rust crate**: [crates.io/crates/rvdna](https://crates.io/crates/rvdna)
 - **npm package**: [@ruvector/rvdna](https://www.npmjs.com/package/@ruvector/rvdna) (NAPI-RS native + JS fallback)
 - **Source**: [examples/dna](./examples/dna)
+
+</details>
+
+<details>
+<summary><strong>RVF Cognitive Containers</strong> — One file that stores, boots, and proves everything</summary>
+
+**[RVF (RuVector Format)](./crates/rvf/README.md)** is a universal binary substrate that merges database, model, graph engine, kernel, and attestation into a single deployable file. A `.rvf` file can store vector embeddings, carry LoRA adapter deltas, embed GNN graph state, include a bootable Linux microkernel, run queries in a 5.5 KB WASM runtime, and prove every operation through a cryptographic witness chain — all in one file that runs anywhere from a browser to bare metal.
+
+This is not a database format. It is an **executable knowledge unit**.
+
+```bash
+cargo install rvf-cli                          # CLI tool
+cargo add rvf-runtime                          # Rust library
+npm install @ruvector/rvf                      # TypeScript SDK
+npx @ruvector/rvf-mcp-server --transport stdio # MCP server for AI agents
+```
+
+| What It Does | How |
+|---|---|
+| Self-boot as a microservice | Real Linux kernel in the file, boots in 125 ms on QEMU/KVM |
+| Hardware-speed lookups | eBPF programs (XDP, TC, socket filter) bypass userspace entirely |
+| Run in any browser | 5.5 KB WASM runtime, zero backend |
+| Git-like branching | COW at cluster granularity — 1M vectors, 100 edits = ~2.5 MB child |
+| Tamper-evident audit | Hash-linked witness chain for every insert, query, and deletion |
+| Post-quantum signatures | ML-DSA-65 and Ed25519 signing on every segment |
+| DNA-style lineage | Parent/child derivation chains with cryptographic verification |
+| 20 segment types | VEC, INDEX, KERNEL, EBPF, WASM, COW_MAP, WITNESS, CRYPTO, and 12 more |
+
+**Rust crates** (13): [`rvf-types`](https://crates.io/crates/rvf-types) `rvf-wire` `rvf-manifest` `rvf-quant` `rvf-index` `rvf-crypto` [`rvf-runtime`](https://crates.io/crates/rvf-runtime) `rvf-kernel` `rvf-ebpf` `rvf-launch` `rvf-server` `rvf-import` [`rvf-cli`](https://crates.io/crates/rvf-cli)
+
+**npm packages** (4): [`@ruvector/rvf`](https://www.npmjs.com/package/@ruvector/rvf) [`@ruvector/rvf-node`](https://www.npmjs.com/package/@ruvector/rvf-node) [`@ruvector/rvf-wasm`](https://www.npmjs.com/package/@ruvector/rvf-wasm) [`@ruvector/rvf-mcp-server`](https://www.npmjs.com/package/@ruvector/rvf-mcp-server)
+
+- **Full documentation**: [crates/rvf/README.md](./crates/rvf/README.md)
+- **ADR-030**: [Cognitive Container Architecture](./docs/adr/ADR-030-rvf-cognitive-container.md)
+- **ADR-031**: [COW Branching & Real Containers](./docs/adr/ADR-031-rvcow-branching-and-real-cognitive-containers.md)
+- **45 runnable examples**: [examples/rvf/examples/](./examples/rvf/examples/)
 
 </details>
 
@@ -284,6 +339,12 @@ npx ruvector
 | **Node.js Native** | ✅ napi-rs | ❌ | ❌ | ❌ | ✅ |
 | **Burst Scaling** | ✅ 10-50x | ✅ | ❌ | ✅ | ❌ |
 | **Streaming API** | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Cognitive Containers** | ✅ [RVF](./crates/rvf/README.md) | ❌ | ❌ | ❌ | ❌ |
+| **Self-Booting Kernel** | ✅ Linux microVM | ❌ | ❌ | ❌ | ❌ |
+| **eBPF Acceleration** | ✅ XDP/TC/socket | ❌ | ❌ | ❌ | ❌ |
+| **COW Branching** | ✅ Cluster-level | ❌ | ❌ | ❌ | ❌ |
+| **Witness Chains** | ✅ Tamper-evident | ❌ | ❌ | ❌ | ❌ |
+| **Post-Quantum Sigs** | ✅ ML-DSA-65 | ❌ | ❌ | ❌ | ❌ |
 | **Open Source** | ✅ MIT | ❌ | ✅ | ✅ | ✅ |
 
 *With PQ8 compression. Benchmarks on Apple M2 / Intel i7.
@@ -326,6 +387,7 @@ cargo add ruvllm                    # Rust
 
 | Feature | What It Does | Why It Matters |
 |---------|--------------|----------------|
+| **[RVF Cognitive Container](./crates/rvf/README.md)** | Single `.rvf` file: store, boot, branch, prove | Replaces Docker + DB + audit system |
 | **rvLite** | Standalone 2MB edge database | IoT, mobile, embedded |
 | **PostgreSQL Extension** | 77+ SQL functions, pgvector replacement | Drop-in upgrade for existing DBs |
 | **MCP Server** | Model Context Protocol integration | AI assistant tool calling |
@@ -334,7 +396,10 @@ cargo add ruvllm                    # Rust
 | **HTTP/gRPC Server** | REST API with streaming | Easy microservice integration |
 
 ```bash
-docker pull ruvnet/ruvector-postgres    # PostgreSQL
+cargo install rvf-cli                    # RVF CLI (17 commands)
+cargo add rvf-runtime                    # RVF Rust library
+npm install @ruvector/rvf                # RVF TypeScript SDK
+docker pull ruvnet/ruvector-postgres     # PostgreSQL
 npm install rvlite                       # Edge DB
 npx ruvector mcp start                   # MCP Server
 ```
@@ -944,11 +1009,15 @@ await dag.execute();
 | **npm** | `npm install ruvector` |
 | **npm (SONA)** | `npm install @ruvector/sona` |
 | **npm (Genomics)** | `npm install @ruvector/rvdna` |
+| **npm (RVF)** | `npm install @ruvector/rvf` |
 | **Browser/WASM** | `npm install ruvector-wasm` |
 | **Rust** | `cargo add ruvector-core ruvector-graph ruvector-gnn` |
+| **Rust (RVF)** | `cargo add rvf-runtime` |
 | **Rust (Genomics)** | `cargo add rvdna` |
 | **Rust (SONA)** | `cargo add ruvector-sona` |
 | **Rust (LLM)** | `cargo add ruvllm` |
+| **RVF CLI** | `cargo install rvf-cli` |
+| **RVF MCP** | `npx @ruvector/rvf-mcp-server --transport stdio` |
 
 ---
 
@@ -1030,12 +1099,14 @@ await dag.execute();
 | [ADR-011](./docs/adr/ADR-011-prefix-caching.md) | **New** | Prefix caching (SOTA) |
 | [ADR-012](./docs/adr/ADR-012-security-remediation.md) | **New** | Security remediation |
 | [ADR-013](./docs/adr/ADR-013-huggingface-publishing.md) | **New** | HuggingFace publishing |
+| [ADR-030](./docs/adr/ADR-030-rvf-cognitive-container.md) | **Accepted** | RVF cognitive container architecture |
+| [ADR-031](./docs/adr/ADR-031-rvcow-branching-and-real-cognitive-containers.md) | **Accepted** | RVCOW branching & real containers |
 
 </details>
 
 
 <details>
-<summary>📦 npm Packages (45+ Packages)</summary>
+<summary>📦 npm Packages (49+ Packages)</summary>
 
 #### Core Packages
 
@@ -1061,7 +1132,7 @@ await dag.execute();
 |---------|-------------|---------|-----------|
 | [@ruvector/tiny-dancer](https://www.npmjs.com/package/@ruvector/tiny-dancer) | FastGRNN neural routing | [![npm](https://img.shields.io/npm/v/@ruvector/tiny-dancer.svg)](https://www.npmjs.com/package/@ruvector/tiny-dancer) | [![downloads](https://img.shields.io/npm/dt/@ruvector/tiny-dancer.svg)](https://www.npmjs.com/package/@ruvector/tiny-dancer) |
 | [@ruvector/router](https://www.npmjs.com/package/@ruvector/router) | Semantic router + HNSW | [![npm](https://img.shields.io/npm/v/@ruvector/router.svg)](https://www.npmjs.com/package/@ruvector/router) | [![downloads](https://img.shields.io/npm/dt/@ruvector/router.svg)](https://www.npmjs.com/package/@ruvector/router) |
-| [@ruvector/attention](https://www.npmjs.com/package/@ruvector/attention) | 39 attention mechanisms | [![npm](https://img.shields.io/npm/v/@ruvector/attention.svg)](https://www.npmjs.com/package/@ruvector/attention) | [![downloads](https://img.shields.io/npm/dt/@ruvector/attention.svg)](https://www.npmjs.com/package/@ruvector/attention) |
+| [@ruvector/attention](https://www.npmjs.com/package/@ruvector/attention) | 40+ attention mechanisms | [![npm](https://img.shields.io/npm/v/@ruvector/attention.svg)](https://www.npmjs.com/package/@ruvector/attention) | [![downloads](https://img.shields.io/npm/dt/@ruvector/attention.svg)](https://www.npmjs.com/package/@ruvector/attention) |
 
 #### Learning & Neural
 
@@ -1101,6 +1172,15 @@ await dag.execute();
 |---------|-------------|---------|-----------|
 | [@ruvector/rvdna](https://www.npmjs.com/package/@ruvector/rvdna) | AI-native genomic analysis + .rvdna format | [![npm](https://img.shields.io/npm/v/@ruvector/rvdna.svg)](https://www.npmjs.com/package/@ruvector/rvdna) | [![downloads](https://img.shields.io/npm/dt/@ruvector/rvdna.svg)](https://www.npmjs.com/package/@ruvector/rvdna) |
 
+#### RVF Cognitive Containers
+
+| Package | Description | Version | Downloads |
+|---------|-------------|---------|-----------|
+| [@ruvector/rvf](https://www.npmjs.com/package/@ruvector/rvf) | Unified TypeScript SDK | [![npm](https://img.shields.io/npm/v/@ruvector/rvf.svg)](https://www.npmjs.com/package/@ruvector/rvf) | [![downloads](https://img.shields.io/npm/dt/@ruvector/rvf.svg)](https://www.npmjs.com/package/@ruvector/rvf) |
+| [@ruvector/rvf-node](https://www.npmjs.com/package/@ruvector/rvf-node) | Node.js N-API native bindings | [![npm](https://img.shields.io/npm/v/@ruvector/rvf-node.svg)](https://www.npmjs.com/package/@ruvector/rvf-node) | [![downloads](https://img.shields.io/npm/dt/@ruvector/rvf-node.svg)](https://www.npmjs.com/package/@ruvector/rvf-node) |
+| [@ruvector/rvf-wasm](https://www.npmjs.com/package/@ruvector/rvf-wasm) | WASM browser package | [![npm](https://img.shields.io/npm/v/@ruvector/rvf-wasm.svg)](https://www.npmjs.com/package/@ruvector/rvf-wasm) | [![downloads](https://img.shields.io/npm/dt/@ruvector/rvf-wasm.svg)](https://www.npmjs.com/package/@ruvector/rvf-wasm) |
+| [@ruvector/rvf-mcp-server](https://www.npmjs.com/package/@ruvector/rvf-mcp-server) | MCP server for AI agents | [![npm](https://img.shields.io/npm/v/@ruvector/rvf-mcp-server.svg)](https://www.npmjs.com/package/@ruvector/rvf-mcp-server) | [![downloads](https://img.shields.io/npm/dt/@ruvector/rvf-mcp-server.svg)](https://www.npmjs.com/package/@ruvector/rvf-mcp-server) |
+
 #### Agentic & Synthetic Data
 
 | Package | Description | Version | Downloads |
@@ -1125,7 +1205,7 @@ await dag.execute();
 | [@ruvector/wasm-unified](https://www.npmjs.com/package/@ruvector/wasm-unified) | Unified TypeScript API | [![npm](https://img.shields.io/npm/v/@ruvector/wasm-unified.svg)](https://www.npmjs.com/package/@ruvector/wasm-unified) | [![downloads](https://img.shields.io/npm/dt/@ruvector/wasm-unified.svg)](https://www.npmjs.com/package/@ruvector/wasm-unified) |
 | [@ruvector/gnn-wasm](https://www.npmjs.com/package/@ruvector/gnn-wasm) | GNN WASM bindings | [![npm](https://img.shields.io/npm/v/@ruvector/gnn-wasm.svg)](https://www.npmjs.com/package/@ruvector/gnn-wasm) | [![downloads](https://img.shields.io/npm/dt/@ruvector/gnn-wasm.svg)](https://www.npmjs.com/package/@ruvector/gnn-wasm) |
 | [@ruvector/attention-wasm](https://www.npmjs.com/package/@ruvector/attention-wasm) | Attention WASM bindings | [![npm](https://img.shields.io/npm/v/@ruvector/attention-wasm.svg)](https://www.npmjs.com/package/@ruvector/attention-wasm) | [![downloads](https://img.shields.io/npm/dt/@ruvector/attention-wasm.svg)](https://www.npmjs.com/package/@ruvector/attention-wasm) |
-| [@ruvector/attention-unified-wasm](https://www.npmjs.com/package/@ruvector/attention-unified-wasm) | All 39 attention mechanisms | [![npm](https://img.shields.io/npm/v/@ruvector/attention-unified-wasm.svg)](https://www.npmjs.com/package/@ruvector/attention-unified-wasm) | [![downloads](https://img.shields.io/npm/dt/@ruvector/attention-unified-wasm.svg)](https://www.npmjs.com/package/@ruvector/attention-unified-wasm) |
+| [@ruvector/attention-unified-wasm](https://www.npmjs.com/package/@ruvector/attention-unified-wasm) | All 40+ attention mechanisms | [![npm](https://img.shields.io/npm/v/@ruvector/attention-unified-wasm.svg)](https://www.npmjs.com/package/@ruvector/attention-unified-wasm) | [![downloads](https://img.shields.io/npm/dt/@ruvector/attention-unified-wasm.svg)](https://www.npmjs.com/package/@ruvector/attention-unified-wasm) |
 | [@ruvector/tiny-dancer-wasm](https://www.npmjs.com/package/@ruvector/tiny-dancer-wasm) | AI routing WASM | [![npm](https://img.shields.io/npm/v/@ruvector/tiny-dancer-wasm.svg)](https://www.npmjs.com/package/@ruvector/tiny-dancer-wasm) | [![downloads](https://img.shields.io/npm/dt/@ruvector/tiny-dancer-wasm.svg)](https://www.npmjs.com/package/@ruvector/tiny-dancer-wasm) |
 | [@ruvector/router-wasm](https://www.npmjs.com/package/@ruvector/router-wasm) | Semantic router WASM | [![npm](https://img.shields.io/npm/v/@ruvector/router-wasm.svg)](https://www.npmjs.com/package/@ruvector/router-wasm) | [![downloads](https://img.shields.io/npm/dt/@ruvector/router-wasm.svg)](https://www.npmjs.com/package/@ruvector/router-wasm) |
 | [@ruvector/learning-wasm](https://www.npmjs.com/package/@ruvector/learning-wasm) | Learning module WASM | [![npm](https://img.shields.io/npm/v/@ruvector/learning-wasm.svg)](https://www.npmjs.com/package/@ruvector/learning-wasm) | [![downloads](https://img.shields.io/npm/dt/@ruvector/learning-wasm.svg)](https://www.npmjs.com/package/@ruvector/learning-wasm) |
@@ -1137,9 +1217,9 @@ await dag.execute();
 </details>
 
 <details>
-<summary>🦀 Rust Crates (70 Packages)</summary>
+<summary>🦀 Rust Crates (83 Packages)</summary>
 
-All crates are published to [crates.io](https://crates.io) under the `ruvector-*` namespace.
+All crates are published to [crates.io](https://crates.io) under the `ruvector-*` and `rvf-*` namespaces.
 
 ### Core Crates
 
@@ -1170,7 +1250,7 @@ All crates are published to [crates.io](https://crates.io) under the `ruvector-*
 
 | Crate | Description | crates.io |
 |-------|-------------|-----------|
-| [ruvector-attention](./crates/ruvector-attention) | 39 attention mechanisms (Flash, Hyperbolic, MoE, Graph) | [![crates.io](https://img.shields.io/crates/v/ruvector-attention.svg)](https://crates.io/crates/ruvector-attention) |
+| [ruvector-attention](./crates/ruvector-attention) | 40+ attention mechanisms (Flash, Hyperbolic, MoE, Graph) | [![crates.io](https://img.shields.io/crates/v/ruvector-attention.svg)](https://crates.io/crates/ruvector-attention) |
 | [ruvector-attention-node](./crates/ruvector-attention-node) | Node.js bindings for attention mechanisms | [![crates.io](https://img.shields.io/crates/v/ruvector-attention-node.svg)](https://crates.io/crates/ruvector-attention-node) |
 | [ruvector-attention-wasm](./crates/ruvector-attention-wasm) | WASM bindings for browser attention | [![crates.io](https://img.shields.io/crates/v/ruvector-attention-wasm.svg)](https://crates.io/crates/ruvector-attention-wasm) |
 | [ruvector-attention-cli](./crates/ruvector-attention-cli) | CLI for attention testing and benchmarking | [![crates.io](https://img.shields.io/crates/v/ruvector-attention-cli.svg)](https://crates.io/crates/ruvector-attention-cli) |
@@ -1332,6 +1412,26 @@ let syndrome = gate.assess_coherence(&quantum_state)?;
 | [rvdna](./examples/dna) | AI-native genomic analysis — variant calling, protein translation, HNSW k-mer search, `.rvdna` format | [![crates.io](https://img.shields.io/crates/v/rvdna.svg)](https://crates.io/crates/rvdna) |
 
 **rvDNA Features:** 12 ms full pipeline on 5 real human genes, Bayesian variant calling (155 ns/SNP), Horvath epigenetic clock, CYP2D6 pharmacogenomics, `.rvdna` binary format with pre-computed AI features, WASM support for browser-based diagnostics. [Full README](./examples/dna/README.md)
+
+### RVF Cognitive Containers
+
+| Crate | Description | crates.io |
+|-------|-------------|-----------|
+| [rvf-types](./crates/rvf/rvf-types) | 20 segment headers, COW/membership/delta types (`no_std`) | [![crates.io](https://img.shields.io/crates/v/rvf-types.svg)](https://crates.io/crates/rvf-types) |
+| [rvf-wire](./crates/rvf/rvf-wire) | Wire format read/write (`no_std`) | [![crates.io](https://img.shields.io/crates/v/rvf-wire.svg)](https://crates.io/crates/rvf-wire) |
+| [rvf-manifest](./crates/rvf/rvf-manifest) | Two-level manifest, FileIdentity, COW pointers | [![crates.io](https://img.shields.io/crates/v/rvf-manifest.svg)](https://crates.io/crates/rvf-manifest) |
+| [rvf-quant](./crates/rvf/rvf-quant) | Scalar, product, binary quantization | [![crates.io](https://img.shields.io/crates/v/rvf-quant.svg)](https://crates.io/crates/rvf-quant) |
+| [rvf-index](./crates/rvf/rvf-index) | HNSW progressive indexing (Layer A/B/C) | [![crates.io](https://img.shields.io/crates/v/rvf-index.svg)](https://crates.io/crates/rvf-index) |
+| [rvf-crypto](./crates/rvf/rvf-crypto) | SHAKE-256, Ed25519, witness chains, attestation | [![crates.io](https://img.shields.io/crates/v/rvf-crypto.svg)](https://crates.io/crates/rvf-crypto) |
+| [rvf-runtime](./crates/rvf/rvf-runtime) | Full store API, COW engine, compaction | [![crates.io](https://img.shields.io/crates/v/rvf-runtime.svg)](https://crates.io/crates/rvf-runtime) |
+| [rvf-kernel](./crates/rvf/rvf-kernel) | Linux kernel builder, initramfs, Docker pipeline | [![crates.io](https://img.shields.io/crates/v/rvf-kernel.svg)](https://crates.io/crates/rvf-kernel) |
+| [rvf-ebpf](./crates/rvf/rvf-ebpf) | Real BPF programs (XDP, socket filter, TC) | [![crates.io](https://img.shields.io/crates/v/rvf-ebpf.svg)](https://crates.io/crates/rvf-ebpf) |
+| [rvf-launch](./crates/rvf/rvf-launch) | QEMU microvm launcher, KVM/TCG | [![crates.io](https://img.shields.io/crates/v/rvf-launch.svg)](https://crates.io/crates/rvf-launch) |
+| [rvf-server](./crates/rvf/rvf-server) | HTTP REST + TCP streaming server | [![crates.io](https://img.shields.io/crates/v/rvf-server.svg)](https://crates.io/crates/rvf-server) |
+| [rvf-import](./crates/rvf/rvf-import) | JSON, CSV, NumPy importers | [![crates.io](https://img.shields.io/crates/v/rvf-import.svg)](https://crates.io/crates/rvf-import) |
+| [rvf-cli](./crates/rvf/rvf-cli) | Unified CLI with 17 subcommands | [![crates.io](https://img.shields.io/crates/v/rvf-cli.svg)](https://crates.io/crates/rvf-cli) |
+
+**RVF Features:** Single-file cognitive containers that boot as Linux microservices, COW branching at cluster granularity, eBPF acceleration, witness chains, post-quantum signatures, 20 segment types. [Full README](./crates/rvf/README.md)
 
 ### Personal AI Memory (OSpipe)
 
@@ -3090,7 +3190,7 @@ CREATE EXTENSION ruvector;
 - **Zero Migration** — Works with existing pgvector code, just swap the extension
 - **10x More Functions** — 230+ SQL functions vs pgvector's ~20
 - **2x Faster** — AVX-512/AVX2/NEON SIMD acceleration
-- **AI-Native** — GNN layers, 39 attention mechanisms, local embeddings
+- **AI-Native** — GNN layers, 40+ attention mechanisms, local embeddings
 - **Self-Learning** — Improves search quality over time with ReasoningBank
 
 | Feature | pgvector | RuVector Postgres |
@@ -3254,7 +3354,7 @@ pg15 = ["ruvector-postgres/pg15"]
 # AI features (opt-in)
 ai-complete = ["ruvector-postgres/ai-complete"]  # All AI features
 learning = ["ruvector-postgres/learning"]         # Self-learning
-attention = ["ruvector-postgres/attention"]       # 39 attention mechanisms
+attention = ["ruvector-postgres/attention"]       # 40+ attention mechanisms
 gnn = ["ruvector-postgres/gnn"]                   # Graph neural networks
 hyperbolic = ["ruvector-postgres/hyperbolic"]     # Hyperbolic embeddings
 embeddings = ["ruvector-postgres/embeddings"]     # Local embedding generation
@@ -4806,7 +4906,15 @@ crates/
 ├── ruvector-gnn/            # GNN layers, compression, training
 ├── ruvector-tiny-dancer-core/  # AI agent routing (FastGRNN)
 ├── ruvector-*-wasm/         # WebAssembly bindings
-└── ruvector-*-node/         # Node.js bindings (napi-rs)
+├── ruvector-*-node/         # Node.js bindings (napi-rs)
+└── rvf/                     # RVF Cognitive Containers (13 crates)
+    ├── rvf-types/           #   Segment types, headers (no_std)
+    ├── rvf-runtime/         #   Store API, COW engine, compaction
+    ├── rvf-kernel/          #   Linux kernel builder
+    ├── rvf-ebpf/            #   eBPF programs (XDP/TC/socket)
+    ├── rvf-launch/          #   QEMU microvm launcher
+    ├── rvf-cli/             #   CLI with 17 subcommands
+    └── ...                  #   wire, manifest, index, quant, crypto, server, import
 ```
 
 </details>
@@ -4834,8 +4942,8 @@ MIT License — free for commercial and personal use.
 
 <div align="center">
 
-**Built by [rUv](https://ruv.io)** • [GitHub](https://github.com/ruvnet/ruvector) • [npm](https://npmjs.com/package/ruvector) • [Docs](./docs/)
+**Built by [rUv](https://ruv.io)** • [GitHub](https://github.com/ruvnet/ruvector) • [npm](https://npmjs.com/package/ruvector) • [crates.io](https://crates.io/crates/rvf-runtime) • [Docs](./docs/) • [RVF](./crates/rvf/README.md)
 
-*Vector search that gets smarter over time.*
+*Vector search that gets smarter over time — now shipping as cognitive containers.*
 
 </div>

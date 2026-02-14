@@ -6,6 +6,8 @@
 **Deciders**: Architecture Review Board
 **SDK**: Claude-Flow
 
+**Note**: The storage layer described in this ADR is superseded by ADR-029 (RVF as Canonical Binary Format). All vector persistence now uses the RVF segment model.
+
 ## Version History
 
 | Version | Date | Author | Changes |

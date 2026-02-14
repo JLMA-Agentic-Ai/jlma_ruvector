@@ -1,0 +1,12 @@
+{
+  "name": "@ruvector/rvf-wasm",
+  "version": "0.1.0",
+  "description": "RuVector Format WASM build for browsers",
+  "main": "pkg/rvf_runtime.js",
+  "types": "pkg/rvf_runtime.d.ts",
+  "files": ["pkg/"],
+  "scripts": {
+    "build": "wasm-pack build ../../crates/rvf/rvf-runtime --target web --out-dir ../../npm/packages/rvf-wasm/pkg --features wasm"
+  },
+  "license": "MIT"
+}

@@ -9,6 +9,8 @@
 | **Supersedes** | None |
 | **Related** | ADR-003 (KV Cache), ADR-005 (LoRA Adapter Loading) |
 
+**Note**: The memory pool and paging strategy described here is complemented by ADR-029. The RVF segment model provides memory management through append-only segments with temperature-tiered quantization.
+
 ## 1. Context and Problem Statement
 
 Modern LLM inference systems face significant memory management challenges when serving multiple concurrent requests with varying adapter configurations. The S-LoRA paper demonstrated that a unified memory pool approach can dramatically improve throughput and reduce fragmentation compared to traditional per-request allocation.

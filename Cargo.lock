@@ -244,6 +244,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "assert-json-diff"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47e4f2b81832e72834d7518d8487a0396a28cc408186a2e8854c0f98011faf12"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "assert_cmd"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -511,6 +521,36 @@ dependencies = [
  "auto-future",
  "axum",
  "bytes",
+ "cookie",
+ "http 1.4.0",
+ "http-body-util",
+ "hyper 1.8.1",
+ "hyper-util",
+ "mime",
+ "pretty_assertions",
+ "reserve-port",
+ "rust-multipart-rfc7578_2",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
+ "smallvec 1.15.1",
+ "tokio",
+ "tower 0.5.2",
+ "url",
+]
+
+[[package]]
+name = "axum-test"
+version = "16.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63e3a443d2608936a02a222da7b746eb412fede7225b3030b64fe9be99eab8dc"
+dependencies = [
+ "anyhow",
+ "assert-json-diff",
+ "auto-future",
+ "axum",
+ "bytes",
+ "bytesize",
  "cookie",
  "http 1.4.0",
  "http-body-util",
@@ -1487,6 +1527,15 @@ name = "crc-catalog"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19d374276b40fb8bbdee95aef7c7fa6b5316ec764510eb64b8dd0e2ed0d7e7f5"
+
+[[package]]
+name = "crc32c"
+version = "0.6.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a47af21622d091a8f0fb295b88bc886ac74efcc613efc19f5d0b21de5c89e47"
+dependencies = [
+ "rustc_version 0.4.1",
+]
 
 [[package]]
 name = "crc32fast"
@@ -4272,6 +4321,15 @@ checksum = "464a3709c7f55f1f721e5389aa6ea4e3bc6aba669353300af094b29ffbdde1d8"
 dependencies = [
  "once_cell",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "keccak"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb26cec98cce3a3d96cbb7bced3c4b16e3d13f27ec56dbd62cbc8f39cfb9d653"
+dependencies = [
+ "cpufeatures",
 ]
 
 [[package]]
@@ -8882,7 +8940,7 @@ dependencies = [
  "async-trait",
  "axum",
  "axum-streams",
- "axum-test",
+ "axum-test 15.7.4",
  "base64 0.22.1",
  "chrono",
  "clap",
@@ -9314,6 +9372,177 @@ dependencies = [
 ]
 
 [[package]]
+name = "rvf-benches"
+version = "0.1.0"
+dependencies = [
+ "criterion 0.5.1",
+ "ed25519-dalek",
+ "rand 0.8.5",
+ "rvf-crypto",
+ "rvf-index",
+ "rvf-manifest",
+ "rvf-quant",
+ "rvf-runtime",
+ "rvf-types",
+ "rvf-wire",
+ "tempfile",
+]
+
+[[package]]
+name = "rvf-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "ctrlc",
+ "rvf-launch",
+ "rvf-manifest",
+ "rvf-runtime",
+ "rvf-server",
+ "rvf-types",
+ "rvf-wire",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "rvf-crypto"
+version = "0.1.0"
+dependencies = [
+ "ed25519-dalek",
+ "rand 0.8.5",
+ "rvf-types",
+ "sha3",
+]
+
+[[package]]
+name = "rvf-ebpf"
+version = "0.1.0"
+dependencies = [
+ "rvf-types",
+ "sha3",
+ "tempfile",
+]
+
+[[package]]
+name = "rvf-import"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "csv",
+ "rvf-runtime",
+ "rvf-types",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "rvf-index"
+version = "0.1.0"
+dependencies = [
+ "rand 0.8.5",
+]
+
+[[package]]
+name = "rvf-integration-tests"
+version = "0.1.0"
+dependencies = [
+ "ed25519-dalek",
+ "rand 0.8.5",
+ "rvf-crypto",
+ "rvf-index",
+ "rvf-manifest",
+ "rvf-quant",
+ "rvf-runtime",
+ "rvf-types",
+ "rvf-wire",
+ "tempfile",
+]
+
+[[package]]
+name = "rvf-kernel"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "rvf-types",
+ "sha3",
+ "tempfile",
+]
+
+[[package]]
+name = "rvf-launch"
+version = "0.1.0"
+dependencies = [
+ "rvf-runtime",
+ "rvf-types",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "rvf-manifest"
+version = "0.1.0"
+dependencies = [
+ "crc32c",
+ "rvf-types",
+ "tempfile",
+]
+
+[[package]]
+name = "rvf-quant"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "rand 0.8.5",
+ "rvf-types",
+]
+
+[[package]]
+name = "rvf-runtime"
+version = "0.1.0"
+dependencies = [
+ "rand 0.8.5",
+ "rvf-types",
+ "tempfile",
+]
+
+[[package]]
+name = "rvf-server"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "axum-test 16.4.1",
+ "clap",
+ "http-body-util",
+ "rvf-runtime",
+ "rvf-types",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tower 0.5.2",
+]
+
+[[package]]
+name = "rvf-types"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "rvf-wire"
+version = "0.1.0"
+dependencies = [
+ "crc32c",
+ "rvf-types",
+ "tempfile",
+ "xxhash-rust",
+]
+
+[[package]]
 name = "rvlite"
 version = "0.3.0"
 dependencies = [
@@ -9591,6 +9820,16 @@ dependencies = [
  "cfg-if 1.0.4",
  "cpufeatures",
  "digest",
+]
+
+[[package]]
+name = "sha3"
+version = "0.10.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75872d278a8f37ef87fa0ddbda7802605cb18344497949862c0d4dcb291eba60"
+dependencies = [
+ "digest",
+ "keccak",
 ]
 
 [[package]]

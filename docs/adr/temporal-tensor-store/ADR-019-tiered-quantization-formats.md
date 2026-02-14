@@ -5,6 +5,8 @@
 **Parent**: ADR-017 Temporal Tensor Compression, ADR-018 Block-Based Storage Engine
 **Author**: System Architecture Team
 
+**Note**: Tiered quantization formats are now implemented in the rvf-quant crate as part of ADR-029 (RVF). See the RVF temperature-tiering specification (docs/research/rvf/spec/03-temperature-tiering.md).
+
 ## Version History
 
 | Version | Date | Author | Changes |

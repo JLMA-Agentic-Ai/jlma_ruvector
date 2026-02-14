@@ -5,6 +5,8 @@
 **Parent**: ADR-017 Temporal Tensor Compression, ADR-018 Block-Based Storage Engine
 **Author**: System Architecture Team
 
+**Note**: Temporal scoring and tier migration is now handled by RVF's adaptive temperature tiering as part of ADR-029. See rvf-runtime for the implementation.
+
 ## Version History
 
 | Version | Date | Author | Changes |

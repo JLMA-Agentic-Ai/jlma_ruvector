@@ -6,6 +6,8 @@
 **Author**: System Architecture Team
 **SDK**: Claude-Flow
 
+**Note**: The block-based storage engine described in this ADR is superseded by ADR-029 (RVF). The RVF VEC_SEG block model with delta-encoded adjacency lists replaces this approach.
+
 ## Version History
 
 | Version | Date | Author | Changes |

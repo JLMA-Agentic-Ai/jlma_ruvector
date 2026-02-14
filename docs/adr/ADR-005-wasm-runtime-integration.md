@@ -9,6 +9,8 @@
 | **Supersedes** | - |
 | **Superseded by** | - |
 
+**Note**: The WASM runtime approach described here is complemented by ADR-029. The RVF WASM microkernel (rvf-wasm) provides a <8 KB Cognitum tile target that replaces ad-hoc WASM builds for vector operations.
+
 ## 1. Context
 
 ### 1.1 Problem Statement
