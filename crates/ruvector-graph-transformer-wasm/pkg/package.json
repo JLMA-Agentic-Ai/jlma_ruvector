@@ -5,7 +5,7 @@
     "Ruvector Team"
   ],
   "description": "WASM bindings for ruvector-graph-transformer: proof-gated graph attention in the browser",
-  "version": "2.2.0",
+  "version": "2.2.2",
   "license": "MIT",
   "repository": {
     "type": "git",
