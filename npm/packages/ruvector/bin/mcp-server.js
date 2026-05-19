@@ -3837,6 +3837,15 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error('RuVector MCP server running on stdio');
+
+  // Exit cleanly when the parent process closes the stdio pipe or sends a
+  // termination signal. Without these handlers, the MCP server can survive
+  // the parent's death (e.g. when the client is killed with SIGKILL) and
+  // accumulate as an orphaned process under PPID=1, consuming RSS for the
+  // lifetime of the user session.
+  process.stdin.on('end', () => process.exit(0));
+  process.on('SIGINT', () => process.exit(0));
+  process.on('SIGTERM', () => process.exit(0));
 }
 
 main().catch(console.error);
